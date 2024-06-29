@@ -1,0 +1,6 @@
+apiVersion: fastgshare.caps.in.tum/v1
+kind: FaSTPod
+metadata:
+  name: fastpod-test-instance
+spec:
+  replicas: 1

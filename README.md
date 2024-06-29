@@ -2,7 +2,6 @@
 
 ## Introduction
 
-
 ## Deploy
 
 
@@ -12,7 +11,7 @@
     ```
     $ go mod tidy
     ```
-2. Generate FaSTPod Custom Resource Definition Client
+2. Generate FaSTPod Custom Resource Definition (CRD) Client
     ```
     $ go get k8s.io/code-generator@v0.24.2
     $ bash code-gen.sh

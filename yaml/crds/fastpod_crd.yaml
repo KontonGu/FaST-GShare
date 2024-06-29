@@ -1,0 +1,52 @@
+#
+# Created on Wed May 29 2024
+#
+# Author: KontonGu
+# Copyright (c) 2024 TUM - CAPS Cloud
+# Licensed under the Apache License, Version 2.0 (the "License")
+#
+
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: fastpods.fastgshare.caps.in.tum
+spec:
+  group: fastgshare.caps.in.tum
+  scope: Namespaced
+  names:
+    plural: fastpods
+    singular: fastpod
+    kind: FaSTPod
+    shortNames:
+    - fstp
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          description: FaSTPod schema description for FaST-GShare
+          type: object
+          required:
+          - spec
+          - metadata
+          - kind
+          properties:
+            apiVersion:
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: 'FaSTPodSpec is the spec for a FaSTPod resource'
+              type: object
+              x-kubernetes-preserve-unknown-fields: true
+            status:
+              description: 'Status of a FaSTPod, need further updates'
+              type: object
+              x-kubernetes-preserve-unknown-fields: true
+
+
+
