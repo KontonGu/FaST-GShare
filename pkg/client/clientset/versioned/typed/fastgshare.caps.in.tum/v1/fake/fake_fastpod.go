@@ -21,7 +21,7 @@ package fake
 import (
 	"context"
 
-	fastgsharecapsintumdev1 "github.com/KontonGu/FaST-GShare/pkg/apis/fastgshare.caps.in.tum.de/v1"
+	fastgsharecapsintumv1 "github.com/KontonGu/FaST-GShare/pkg/apis/fastgshare.caps.in.tum/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -41,20 +41,20 @@ var fastpodsResource = schema.GroupVersionResource{Group: "fastgshare.caps.in.tu
 var fastpodsKind = schema.GroupVersionKind{Group: "fastgshare.caps.in.tum.de", Version: "v1", Kind: "FaSTPod"}
 
 // Get takes name of the faSTPod, and returns the corresponding faSTPod object, and an error if there is any.
-func (c *FakeFaSTPods) Get(ctx context.Context, name string, options v1.GetOptions) (result *fastgsharecapsintumdev1.FaSTPod, err error) {
+func (c *FakeFaSTPods) Get(ctx context.Context, name string, options v1.GetOptions) (result *fastgsharecapsintumv1.FaSTPod, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(fastpodsResource, c.ns, name), &fastgsharecapsintumdev1.FaSTPod{})
+		Invokes(testing.NewGetAction(fastpodsResource, c.ns, name), &fastgsharecapsintumv1.FaSTPod{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*fastgsharecapsintumdev1.FaSTPod), err
+	return obj.(*fastgsharecapsintumv1.FaSTPod), err
 }
 
 // List takes label and field selectors, and returns the list of FaSTPods that match those selectors.
-func (c *FakeFaSTPods) List(ctx context.Context, opts v1.ListOptions) (result *fastgsharecapsintumdev1.FaSTPodList, err error) {
+func (c *FakeFaSTPods) List(ctx context.Context, opts v1.ListOptions) (result *fastgsharecapsintumv1.FaSTPodList, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(fastpodsResource, fastpodsKind, c.ns, opts), &fastgsharecapsintumdev1.FaSTPodList{})
+		Invokes(testing.NewListAction(fastpodsResource, fastpodsKind, c.ns, opts), &fastgsharecapsintumv1.FaSTPodList{})
 
 	if obj == nil {
 		return nil, err
@@ -64,8 +64,8 @@ func (c *FakeFaSTPods) List(ctx context.Context, opts v1.ListOptions) (result *f
 	if label == nil {
 		label = labels.Everything()
 	}
-	list := &fastgsharecapsintumdev1.FaSTPodList{ListMeta: obj.(*fastgsharecapsintumdev1.FaSTPodList).ListMeta}
-	for _, item := range obj.(*fastgsharecapsintumdev1.FaSTPodList).Items {
+	list := &fastgsharecapsintumv1.FaSTPodList{ListMeta: obj.(*fastgsharecapsintumv1.FaSTPodList).ListMeta}
+	for _, item := range obj.(*fastgsharecapsintumv1.FaSTPodList).Items {
 		if label.Matches(labels.Set(item.Labels)) {
 			list.Items = append(list.Items, item)
 		}
@@ -81,43 +81,43 @@ func (c *FakeFaSTPods) Watch(ctx context.Context, opts v1.ListOptions) (watch.In
 }
 
 // Create takes the representation of a faSTPod and creates it.  Returns the server's representation of the faSTPod, and an error, if there is any.
-func (c *FakeFaSTPods) Create(ctx context.Context, faSTPod *fastgsharecapsintumdev1.FaSTPod, opts v1.CreateOptions) (result *fastgsharecapsintumdev1.FaSTPod, err error) {
+func (c *FakeFaSTPods) Create(ctx context.Context, faSTPod *fastgsharecapsintumv1.FaSTPod, opts v1.CreateOptions) (result *fastgsharecapsintumv1.FaSTPod, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(fastpodsResource, c.ns, faSTPod), &fastgsharecapsintumdev1.FaSTPod{})
+		Invokes(testing.NewCreateAction(fastpodsResource, c.ns, faSTPod), &fastgsharecapsintumv1.FaSTPod{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*fastgsharecapsintumdev1.FaSTPod), err
+	return obj.(*fastgsharecapsintumv1.FaSTPod), err
 }
 
 // Update takes the representation of a faSTPod and updates it. Returns the server's representation of the faSTPod, and an error, if there is any.
-func (c *FakeFaSTPods) Update(ctx context.Context, faSTPod *fastgsharecapsintumdev1.FaSTPod, opts v1.UpdateOptions) (result *fastgsharecapsintumdev1.FaSTPod, err error) {
+func (c *FakeFaSTPods) Update(ctx context.Context, faSTPod *fastgsharecapsintumv1.FaSTPod, opts v1.UpdateOptions) (result *fastgsharecapsintumv1.FaSTPod, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(fastpodsResource, c.ns, faSTPod), &fastgsharecapsintumdev1.FaSTPod{})
+		Invokes(testing.NewUpdateAction(fastpodsResource, c.ns, faSTPod), &fastgsharecapsintumv1.FaSTPod{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*fastgsharecapsintumdev1.FaSTPod), err
+	return obj.(*fastgsharecapsintumv1.FaSTPod), err
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeFaSTPods) UpdateStatus(ctx context.Context, faSTPod *fastgsharecapsintumdev1.FaSTPod, opts v1.UpdateOptions) (*fastgsharecapsintumdev1.FaSTPod, error) {
+func (c *FakeFaSTPods) UpdateStatus(ctx context.Context, faSTPod *fastgsharecapsintumv1.FaSTPod, opts v1.UpdateOptions) (*fastgsharecapsintumv1.FaSTPod, error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(fastpodsResource, "status", c.ns, faSTPod), &fastgsharecapsintumdev1.FaSTPod{})
+		Invokes(testing.NewUpdateSubresourceAction(fastpodsResource, "status", c.ns, faSTPod), &fastgsharecapsintumv1.FaSTPod{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*fastgsharecapsintumdev1.FaSTPod), err
+	return obj.(*fastgsharecapsintumv1.FaSTPod), err
 }
 
 // Delete takes name of the faSTPod and deletes it. Returns an error if one occurs.
 func (c *FakeFaSTPods) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(fastpodsResource, c.ns, name, opts), &fastgsharecapsintumdev1.FaSTPod{})
+		Invokes(testing.NewDeleteActionWithOptions(fastpodsResource, c.ns, name, opts), &fastgsharecapsintumv1.FaSTPod{})
 
 	return err
 }
@@ -126,17 +126,17 @@ func (c *FakeFaSTPods) Delete(ctx context.Context, name string, opts v1.DeleteOp
 func (c *FakeFaSTPods) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
 	action := testing.NewDeleteCollectionAction(fastpodsResource, c.ns, listOpts)
 
-	_, err := c.Fake.Invokes(action, &fastgsharecapsintumdev1.FaSTPodList{})
+	_, err := c.Fake.Invokes(action, &fastgsharecapsintumv1.FaSTPodList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched faSTPod.
-func (c *FakeFaSTPods) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *fastgsharecapsintumdev1.FaSTPod, err error) {
+func (c *FakeFaSTPods) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *fastgsharecapsintumv1.FaSTPod, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(fastpodsResource, c.ns, name, pt, data, subresources...), &fastgsharecapsintumdev1.FaSTPod{})
+		Invokes(testing.NewPatchSubresourceAction(fastpodsResource, c.ns, name, pt, data, subresources...), &fastgsharecapsintumv1.FaSTPod{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*fastgsharecapsintumdev1.FaSTPod), err
+	return obj.(*fastgsharecapsintumv1.FaSTPod), err
 }

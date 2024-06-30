@@ -20,8 +20,8 @@ package fake
 
 import (
 	clientset "github.com/KontonGu/FaST-GShare/pkg/client/clientset/versioned"
-	fastgsharev1 "github.com/KontonGu/FaST-GShare/pkg/client/clientset/versioned/typed/fastgshare.caps.in.tum.de/v1"
-	fakefastgsharev1 "github.com/KontonGu/FaST-GShare/pkg/client/clientset/versioned/typed/fastgshare.caps.in.tum.de/v1/fake"
+	fastgsharev1 "github.com/KontonGu/FaST-GShare/pkg/client/clientset/versioned/typed/fastgshare.caps.in.tum/v1"
+	fakefastgsharev1 "github.com/KontonGu/FaST-GShare/pkg/client/clientset/versioned/typed/fastgshare.caps.in.tum/v1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"

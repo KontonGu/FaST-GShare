@@ -19,7 +19,7 @@ limitations under the License.
 package fake
 
 import (
-	fastgsharev1 "github.com/KontonGu/FaST-GShare/pkg/apis/fastgshare.caps.in.tum.de/v1"
+	fastgsharev1 "github.com/KontonGu/FaST-GShare/pkg/apis/fastgshare.caps.in.tum/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

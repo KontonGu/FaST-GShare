@@ -19,7 +19,7 @@ limitations under the License.
 package fastgshare
 
 import (
-	v1 "github.com/KontonGu/FaST-GShare/pkg/client/informers/externalversions/fastgshare.caps.in.tum.de/v1"
+	v1 "github.com/KontonGu/FaST-GShare/pkg/client/informers/externalversions/fastgshare.caps.in.tum/v1"
 	internalinterfaces "github.com/KontonGu/FaST-GShare/pkg/client/informers/externalversions/internalinterfaces"
 )
 

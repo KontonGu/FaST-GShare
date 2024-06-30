@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"net/http"
 
-	fastgsharev1 "github.com/KontonGu/FaST-GShare/pkg/client/clientset/versioned/typed/fastgshare.caps.in.tum.de/v1"
+	fastgsharev1 "github.com/KontonGu/FaST-GShare/pkg/client/clientset/versioned/typed/fastgshare.caps.in.tum/v1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"

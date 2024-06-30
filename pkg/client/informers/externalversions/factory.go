@@ -24,7 +24,7 @@ import (
 	time "time"
 
 	versioned "github.com/KontonGu/FaST-GShare/pkg/client/clientset/versioned"
-	fastgsharecapsintumde "github.com/KontonGu/FaST-GShare/pkg/client/informers/externalversions/fastgshare.caps.in.tum.de"
+	fastgsharecapsintum "github.com/KontonGu/FaST-GShare/pkg/client/informers/externalversions/fastgshare.caps.in.tum"
 	internalinterfaces "github.com/KontonGu/FaST-GShare/pkg/client/informers/externalversions/internalinterfaces"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
@@ -172,9 +172,9 @@ type SharedInformerFactory interface {
 	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
-	Fastgshare() fastgsharecapsintumde.Interface
+	Fastgshare() fastgsharecapsintum.Interface
 }
 
-func (f *sharedInformerFactory) Fastgshare() fastgsharecapsintumde.Interface {
-	return fastgsharecapsintumde.New(f, f.namespace, f.tweakListOptions)
+func (f *sharedInformerFactory) Fastgshare() fastgsharecapsintum.Interface {
+	return fastgsharecapsintum.New(f, f.namespace, f.tweakListOptions)
 }
