@@ -3,7 +3,8 @@ package main
 import (
 	"flag"
 
-	// "github.com/KontonGu/FaST-GShare/pkg/fast-configurator/fastconfigurator"
+	"gihtub.com/KontonGu/FaST-GShare/pkg/fast-configurator/fastconfigurator"
+
 	"github.com/NVIDIA/go-nvml/pkg/nvml"
 	klog "k8s.io/klog/v2"
 )
@@ -45,7 +46,7 @@ func main() {
 
 		klog.Infof("%v\n", uuid)
 	}
-	// fastconfigurator.Run(device_manager_ip_port)
+	fastconfigurator.Run(device_manager_ip_port)
 
 }
 
