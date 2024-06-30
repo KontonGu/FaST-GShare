@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 
-	"fast-configurator/fastconfigurator"
+	"github.com/KontonGu/FaST-GShare/pkg/fast-configurator/fastconfigurator"
 
 	"github.com/NVIDIA/go-nvml/pkg/nvml"
 	klog "k8s.io/klog/v2"

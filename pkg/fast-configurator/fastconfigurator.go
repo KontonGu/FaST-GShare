@@ -17,5 +17,5 @@ const (
 )
 
 func Run(device_manager string) {
-	fmt.Println("Run function")
+	fmt.Println("Run function testing")
 }
