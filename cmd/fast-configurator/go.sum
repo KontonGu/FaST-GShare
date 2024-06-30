@@ -1,13 +1,11 @@
-github.com/KontonGu/FaST-GShare v0.0.0-20240630131314-114d3ff49e4b h1:0oxEToMqnwV5MhUfybUT1E2t9LHaRvkcGUH2hHhGOzc=
-github.com/KontonGu/FaST-GShare v0.0.0-20240630131314-114d3ff49e4b/go.mod h1:VcXA1r0vxvvM2vi6tj3JYhZ50EcuraXyqjK2bzgq7gQ=
-github.com/KontonGu/FaST-GShare v1.0.0 h1:QV3aixSnxhn187VtvqedzNgK8HWGWNSrcFgr21jV94Q=
-github.com/KontonGu/FaST-GShare v1.0.0/go.mod h1:VcXA1r0vxvvM2vi6tj3JYhZ50EcuraXyqjK2bzgq7gQ=
+github.com/KontonGu/FaST-GShare v0.0.0-20240630134909-ef4bd019fe2b h1:294QZEG5UypTa0ueCfh6oCNz2pU9lTjBFIENSH6CvZg=
+github.com/KontonGu/FaST-GShare v0.0.0-20240630134909-ef4bd019fe2b/go.mod h1:VcXA1r0vxvvM2vi6tj3JYhZ50EcuraXyqjK2bzgq7gQ=
 github.com/NVIDIA/go-nvml v0.12.4-0 h1:4tkbB3pT1O77JGr0gQ6uD8FrsUPqP1A/EOEm2wI1TUg=
 github.com/NVIDIA/go-nvml v0.12.4-0/go.mod h1:8Llmj+1Rr+9VGGwZuRer5N/aCjxGuR5nPb/9ebBiIEQ=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/go-logr/logr v1.4.1 h1:pKouT5E8xu9zeFC39JXRDukb6JFQPXM5p5I91188VAQ=
-github.com/go-logr/logr v1.4.1/go.mod h1:9T104GzyrTigFIr8wt5mBrctHMim0Nb2HLGrmQ40KvY=
+github.com/go-logr/logr v1.4.2 h1:6pFjapn8bFcIbiKo3XT4j/BhANplGihG6tvd+8rYgrY=
+github.com/go-logr/logr v1.4.2/go.mod h1:9T104GzyrTigFIr8wt5mBrctHMim0Nb2HLGrmQ40KvY=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsTg=

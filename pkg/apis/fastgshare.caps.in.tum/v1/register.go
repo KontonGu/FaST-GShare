@@ -48,9 +48,9 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&FaSTPod{},
 		&FaSTPodList{},
 	)
-	// scheme.AddKnownTypes(SchemeGroupVersion,
-	// 	&metav1.Status{},
-	// )
+	scheme.AddKnownTypes(SchemeGroupVersion,
+		&metav1.Status{},
+	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil
 }
