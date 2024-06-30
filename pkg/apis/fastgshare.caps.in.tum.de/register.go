@@ -1,5 +1,5 @@
 /*
-Copyright 2024 FaST-GShare Authors.
+Copyright 2024 FaST-GShare Authors, KontonGu (Jianfeng Gu), et. al.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
