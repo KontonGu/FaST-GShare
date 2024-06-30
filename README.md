@@ -22,4 +22,12 @@
     $ git checkout release-1.23 && cd ../FaST-GShare
     $ bash code-gen.sh
     ```
+    Clean generated FaSTPod CRD client
+    ```
+    $ make clean_crd_gen
+    ```
+    Generate new CRD client:
+    ```
+    $ make gen_crd
+    ```
 
