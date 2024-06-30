@@ -9,11 +9,17 @@
 ## Build
 1. Get Go dependencies
     ```
+    $ mkdir github.com/KontonGu && cd github.com/KontonGu
+    $ git clone git@github.com:KontonGu/FaST-GShare.git
+    $ cd FaST-GShare
+    $ go mod init github.com/KontonGu/FaST-GShare
     $ go mod tidy
     ```
 2. Generate FaSTPod Custom Resource Definition (CRD) Client
     ```
-    $ go get k8s.io/code-generator@v0.24.2
+    $ cd ../
+    $ git clone https://github.com/kubernetes/code-generator.git
+    $ git checkout release-1.23 && cd ../FaST-GShare
     $ bash code-gen.sh
     ```
 

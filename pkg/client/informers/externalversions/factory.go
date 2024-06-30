@@ -19,13 +19,13 @@ limitations under the License.
 package externalversions
 
 import (
-	fastgsharecapsintum "pkg/client/informers/externalversions/fastgshare.caps.in.tum"
-	internalinterfaces "pkg/client/informers/externalversions/internalinterfaces"
 	reflect "reflect"
 	sync "sync"
 	time "time"
 
-	versioned "./pkg/client/clientset/versioned"
+	versioned "github.com/KontonGu/FaST-GShare/pkg/client/clientset/versioned"
+	fastgsharecapsintumde "github.com/KontonGu/FaST-GShare/pkg/client/informers/externalversions/fastgshare.caps.in.tum.de"
+	internalinterfaces "github.com/KontonGu/FaST-GShare/pkg/client/informers/externalversions/internalinterfaces"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -172,9 +172,9 @@ type SharedInformerFactory interface {
 	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
-	Kubeshare() fastgsharecapsintum.Interface
+	Fastgshare() fastgsharecapsintumde.Interface
 }
 
-func (f *sharedInformerFactory) Kubeshare() fastgsharecapsintum.Interface {
-	return fastgsharecapsintum.New(f, f.namespace, f.tweakListOptions)
+func (f *sharedInformerFactory) Fastgshare() fastgsharecapsintumde.Interface {
+	return fastgsharecapsintumde.New(f, f.namespace, f.tweakListOptions)
 }

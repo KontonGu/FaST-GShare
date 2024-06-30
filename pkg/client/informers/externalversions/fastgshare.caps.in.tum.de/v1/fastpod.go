@@ -20,12 +20,12 @@ package v1
 
 import (
 	"context"
-	internalinterfaces "pkg/client/informers/externalversions/internalinterfaces"
 	time "time"
 
-	fastgsharecapsintumv1 "./pkg/apis/fastgshare.caps.in.tum/v1"
-	versioned "./pkg/client/clientset/versioned"
-	v1 "./pkg/client/listers/fastgshare.caps.in.tum/v1"
+	fastgsharecapsintumdev1 "github.com/KontonGu/FaST-GShare/pkg/apis/fastgshare.caps.in.tum.de/v1"
+	versioned "github.com/KontonGu/FaST-GShare/pkg/client/clientset/versioned"
+	internalinterfaces "github.com/KontonGu/FaST-GShare/pkg/client/informers/externalversions/internalinterfaces"
+	v1 "github.com/KontonGu/FaST-GShare/pkg/client/listers/fastgshare.caps.in.tum.de/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -62,16 +62,16 @@ func NewFilteredFaSTPodInformer(client versioned.Interface, namespace string, re
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.KubeshareV1().FaSTPods(namespace).List(context.TODO(), options)
+				return client.FastgshareV1().FaSTPods(namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.KubeshareV1().FaSTPods(namespace).Watch(context.TODO(), options)
+				return client.FastgshareV1().FaSTPods(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&fastgsharecapsintumv1.FaSTPod{},
+		&fastgsharecapsintumdev1.FaSTPod{},
 		resyncPeriod,
 		indexers,
 	)
@@ -82,7 +82,7 @@ func (f *faSTPodInformer) defaultInformer(client versioned.Interface, resyncPeri
 }
 
 func (f *faSTPodInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&fastgsharecapsintumv1.FaSTPod{}, f.defaultInformer)
+	return f.factory.InformerFor(&fastgsharecapsintumdev1.FaSTPod{}, f.defaultInformer)
 }
 
 func (f *faSTPodInformer) Lister() v1.FaSTPodLister {

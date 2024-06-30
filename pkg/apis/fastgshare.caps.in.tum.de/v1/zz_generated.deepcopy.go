@@ -32,8 +32,8 @@ func (in *FaSTPod) DeepCopyInto(out *FaSTPod) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
 	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
-	in.Status.DeepCopyInto(&out.Status)
 	in.Spec.DeepCopyInto(&out.Spec)
+	in.Status.DeepCopyInto(&out.Status)
 	return
 }
 

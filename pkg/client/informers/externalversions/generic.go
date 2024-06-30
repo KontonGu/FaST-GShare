@@ -21,7 +21,7 @@ package externalversions
 import (
 	"fmt"
 
-	v1 "./pkg/apis/fastgshare.caps.in.tum/v1"
+	v1 "github.com/KontonGu/FaST-GShare/pkg/apis/fastgshare.caps.in.tum.de/v1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 )
@@ -52,9 +52,9 @@ func (f *genericInformer) Lister() cache.GenericLister {
 // TODO extend this to unknown resources with a client pool
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
-	// Group=kubeshare.nthu, Version=v1
+	// Group=fastgshare.caps.in.tum.de, Version=v1
 	case v1.SchemeGroupVersion.WithResource("fastpods"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Kubeshare().V1().FaSTPods().Informer()}, nil
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Fastgshare().V1().FaSTPods().Informer()}, nil
 
 	}
 

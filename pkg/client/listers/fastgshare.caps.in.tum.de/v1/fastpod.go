@@ -19,7 +19,7 @@ limitations under the License.
 package v1
 
 import (
-	v1 "./pkg/apis/fastgshare.caps.in.tum/v1"
+	v1 "github.com/KontonGu/FaST-GShare/pkg/apis/fastgshare.caps.in.tum.de/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/cache"
