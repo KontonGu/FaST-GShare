@@ -31,7 +31,7 @@ type FastgshareV1Interface interface {
 	FaSTPodsGetter
 }
 
-// FastgshareV1Client is used to interact with features provided by the fastgshare.caps.in.tum.de group.
+// FastgshareV1Client is used to interact with features provided by the fastgshare.caps.in.tum group.
 type FastgshareV1Client struct {
 	restClient rest.Interface
 }

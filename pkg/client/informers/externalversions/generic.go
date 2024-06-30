@@ -52,7 +52,7 @@ func (f *genericInformer) Lister() cache.GenericLister {
 // TODO extend this to unknown resources with a client pool
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
-	// Group=fastgshare.caps.in.tum.de, Version=v1
+	// Group=fastgshare.caps.in.tum, Version=v1
 	case v1.SchemeGroupVersion.WithResource("fastpods"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Fastgshare().V1().FaSTPods().Informer()}, nil
 

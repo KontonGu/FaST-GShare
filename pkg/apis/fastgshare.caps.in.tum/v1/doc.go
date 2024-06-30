@@ -14,11 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// pkg/caps.in.tum.de/v1/doc.go
-
 // +k8s:deepcopy-gen=package
 // +k8s:defaulter-gen=TypeMeta
 // +k8s:conversion-gen=k8s.io/code-generator/_examples/apiserver/apis/example
-// +groupName=fastgshare.caps.in.tum.de
+// +groupName=fastgshare.caps.in.tum
 
 package v1

@@ -36,9 +36,9 @@ type FakeFaSTPods struct {
 	ns   string
 }
 
-var fastpodsResource = schema.GroupVersionResource{Group: "fastgshare.caps.in.tum.de", Version: "v1", Resource: "fastpods"}
+var fastpodsResource = schema.GroupVersionResource{Group: "fastgshare.caps.in.tum", Version: "v1", Resource: "fastpods"}
 
-var fastpodsKind = schema.GroupVersionKind{Group: "fastgshare.caps.in.tum.de", Version: "v1", Kind: "FaSTPod"}
+var fastpodsKind = schema.GroupVersionKind{Group: "fastgshare.caps.in.tum", Version: "v1", Kind: "FaSTPod"}
 
 // Get takes name of the faSTPod, and returns the corresponding faSTPod object, and an error if there is any.
 func (c *FakeFaSTPods) Get(ctx context.Context, name string, options v1.GetOptions) (result *fastgsharecapsintumv1.FaSTPod, err error) {
