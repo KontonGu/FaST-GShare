@@ -8,6 +8,8 @@
 
 package fastconfigurator
 
+import "fmt"
+
 const (
 	ClientsIPFile          = "/fastpod/library/GPUClientIP.txt"
 	FastSchedulerConfigDir = "/fastpod/scheduler/config"
@@ -15,5 +17,5 @@ const (
 )
 
 func Run(device_manager string) {
-
+	fmt.Println("Run function")
 }
