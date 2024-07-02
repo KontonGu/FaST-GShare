@@ -67,6 +67,10 @@ const (
 	GPUClientPortStart = 58001
 )
 
+var (
+	KeyFunc = cache.DeletionHandlingMetaNamespaceKeyFunc // can still create the key even the object is deleted;
+)
+
 type Controller struct {
 	kubeClient    kubernetes.Interface
 	fastpodClient clientset.Interface
@@ -141,9 +145,9 @@ func NewController(
 		workqueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "FaSTPods"),
 		recorder:  recorder,
 	}
-	klog.Info("Setting up event handlers")
 
-	// Set up an event handler for when SharePod resources change
+	klog.Info("Setting up event handlers")
+	// Set up an event handler for when FaSTPod resources change
 	fastpodinformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.enqueueFaSTPod,
 		UpdateFunc: func(old, new interface{}) {
@@ -200,7 +204,7 @@ func (c *Controller) Run(ctx context.Context, workers int) error {
 	defer c.workqueue.ShutDown()
 
 	// Start the informer factories to begin populating the informer caches
-	klog.Info("Starting SharePod controller")
+	klog.Info("Starting FaSTPod controller")
 
 	// Wait for the caches to be synced before starting workers
 	klog.Info("Waiting for informer caches to sync")
@@ -209,7 +213,7 @@ func (c *Controller) Run(ctx context.Context, workers int) error {
 	}
 
 	klog.Info("Starting workers", "count: ", workers)
-	// Launch two workers to process SharePod resources
+	// Launch two workers to process FaSTPod resources
 	for i := 0; i < workers; i++ {
 		go wait.UntilWithContext(ctx, c.runWorker, time.Second)
 	}
