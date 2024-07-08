@@ -51,5 +51,5 @@ func main() {
 }
 
 func init() {
-	flag.StringVar(&device_manager_ip_port, "devicemanager_ip_port", "127.0.0.1:9797", "The IP and Port to the FaST-GShare device manager.")
+	flag.StringVar(&device_manager_ip_port, "devicemanager_ip_port", "127.0.0.1:10086", "The IP and Port to the FaST-GShare device manager.")
 }
