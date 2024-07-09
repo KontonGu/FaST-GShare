@@ -25,6 +25,19 @@ import (
 	"k8s.io/klog/v2"
 )
 
+// FaSTPod labels items' key name
+const (
+	FaSTGShareGPUQuotaRequest  = "fastgshare/gpu_quota_request"
+	FaSTGShareGPUQuotaLimit    = "fastgshare/gpu_quota_limit"
+	FaSTGShareGPUSMPartition   = "fastgshare/gpu_sm_partition"
+	FaSTGShareGPUMemory        = "fastgshare/gpu_mem"
+	FaSTGShareVGPUID           = "fastgshare/vgpu_id"
+	FaSTGShareNodeName         = "fastgshare/nodeName"
+	FaSTGShareRole             = "fastgshare/role"
+	FaSTGShareDummpyPodName    = "fastgshare-vgpu"
+	OriginalNvidiaResourceName = "nvidia.com/gpu"
+)
+
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 

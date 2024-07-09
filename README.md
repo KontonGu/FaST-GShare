@@ -27,6 +27,6 @@
     ```
     Update CRD client:
     ```
-    $ make gen_crd
+    $ make update_crd
     ```
 
