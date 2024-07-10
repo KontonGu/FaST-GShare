@@ -51,4 +51,4 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-// replace github.com/KontonGu/FaST-GShare/pkg/lib => ./lib
+replace github.com/KontonGu/FaST-GShare => ./

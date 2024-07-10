@@ -4,6 +4,7 @@ import (
 	"flag"
 
 	fastconfigurator "github.com/KontonGu/FaST-GShare/pkg/fast-configurator"
+	"github.com/KontonGu/FaST-GShare/pkg/libs/bbitmap"
 
 	"github.com/NVIDIA/go-nvml/pkg/nvml"
 	klog "k8s.io/klog/v2"
@@ -47,6 +48,9 @@ func main() {
 		klog.Infof("%v\n", uuid)
 	}
 	fastconfigurator.Run(device_manager_ip_port)
+
+	bm := bbitmap.NewBitmap(512)
+	klog.Info("%d", bm.Get(10))
 
 }
 
