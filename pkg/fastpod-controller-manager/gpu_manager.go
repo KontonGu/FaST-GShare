@@ -97,8 +97,8 @@ func (ctr *Controller) gpuNodeInit() error {
 			pBm := bitmap.NewBitmap(256)
 			pBm.Set(0)
 			nodeItem = &NodeStatusInfo{
-				vGPUID2GPU:      make(map[string]*GPUDevInfo),
-				DaemonPortAlloc: pBm,
+				vGPUID2GPU: make(map[string]*GPUDevInfo),
+				// DaemonPortAlloc: pBm,
 			}
 			nodeItem.vGPUID2GPU[infoItem.vgpuID] = &GPUDevInfo{
 				GPUType: "",
