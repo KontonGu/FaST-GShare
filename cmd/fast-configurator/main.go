@@ -4,8 +4,6 @@ import (
 	"flag"
 
 	fastconfigurator "github.com/KontonGu/FaST-GShare/pkg/fast-configurator"
-	"github.com/KontonGu/FaST-GShare/pkg/libs/bbitmap"
-
 	"github.com/NVIDIA/go-nvml/pkg/nvml"
 	klog "k8s.io/klog/v2"
 )
@@ -40,6 +38,10 @@ func main() {
 			klog.Fatalf("Unable to get device at index %d: %v", i, nvml.ErrorString(ret))
 		}
 
+		meminfo, ret := device.GetMemoryInfo()
+		memsize := meminfo.Total
+		klog.Infof("Memory Size = %d\n", memsize)
+
 		uuid, ret := device.GetUUID()
 		if ret != nvml.SUCCESS {
 			klog.Fatalf("Unable to get uuid of device at index %d: %v", i, nvml.ErrorString(ret))
@@ -48,9 +50,6 @@ func main() {
 		klog.Infof("%v\n", uuid)
 	}
 	fastconfigurator.Run(device_manager_ip_port)
-
-	bm := bbitmap.NewBitmap(512)
-	klog.Info("%d", bm.Get(10))
 
 }
 
