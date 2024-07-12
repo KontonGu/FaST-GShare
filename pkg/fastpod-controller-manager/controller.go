@@ -213,12 +213,12 @@ func (c *Controller) Run(ctx context.Context, workers int) error {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
-	klog.Info("Starting workers", "count: ", workers)
+	klog.Infof("Starting workers, Numuber of workers = %d.", workers)
 	// Launch two workers to process FaSTPod resources
 	for i := 0; i < workers; i++ {
 		go wait.UntilWithContext(ctx, c.runWorker, time.Second)
 	}
-	klog.Info("Started workers")
+	klog.Info("Workers Started")
 	<-ctx.Done()
 	klog.Info("Shutting down workers")
 	// pendingInsuranceTicker.Stop()
@@ -238,7 +238,7 @@ func (c *Controller) runWorker(ctx context.Context) {
 // processNextWorkItem will read a single work item off the workqueue and
 // attempt to process it, by calling the syncHandler.
 func (c *Controller) processNextWorkItem() bool {
-
+	return true
 }
 
 func (c *Controller) enqueueFaSTPod(obj interface{}) {
