@@ -9,7 +9,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: kubeshare-device-manager-binder
+  name: fastpod-controller-manager-role-binder
 subjects:
 - kind: ServiceAccount
   name: fastpod-controller-manager

@@ -12,7 +12,8 @@ RUN apt-get update && apt install -y g++ wget make && \
     make fastpod-controller-manager
 
 
-FROM busybox:1.36.1-glibc
+# FROM busybox:1.36.1-glibc
+FROM  ubuntu:22.04
 
 ENV NVIDIA_VISIBLE_DEVICES=all
 ENV NVIDIA_DRIVER_CAPABILITIES=utility

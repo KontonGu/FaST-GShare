@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: configurator
+  namespace: kube-system
+spec:
+  containers:
+  - name: fast-configurator-ctn
+    image: kontonpuku666/fast-configurator:release
+    volumeMounts:
+    - name: "fastpod-library"
+      mountPath: "/fastpod/library"
+    - name: "fastpod-scheduler"
+      mountPath: "/fastpod/scheduler"
+    env:
+    - name: "FaSTPod_GPUClientsIP"
+      valueFrom:
+        fieldRef:
+          fieldPath: status.podIP
+    command: ["sleep"]
+    args: ["3600"]
+  volumes:
+      - name: "fastpod-library"
+        hostPath:
+          path: "/fastpod/library"
+      - name: "fastpod-scheduler"
+        hostPath:
+          path: "/fastpod/scheduler"

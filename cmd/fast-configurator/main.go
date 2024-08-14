@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"strings"
 
 	fastconfigurator "github.com/KontonGu/FaST-GShare/pkg/fast-configurator"
 	"github.com/NVIDIA/go-nvml/pkg/nvml"
@@ -9,7 +10,7 @@ import (
 )
 
 var (
-	device_manager_ip_port string
+	ctr_mgr_ip_port string
 )
 
 func main() {
@@ -46,13 +47,20 @@ func main() {
 		if ret != nvml.SUCCESS {
 			klog.Fatalf("Unable to get uuid of device at index %d: %v", i, nvml.ErrorString(ret))
 		}
+		klog.Infof("UUID: %v\n", uuid)
 
-		klog.Infof("%v\n", uuid)
+		gpu_type_name, ret := device.GetName()
+		if ret != nvml.SUCCESS {
+			klog.Fatalf("Unable to get name of device at index %d: %v", i, nvml.ErrorString(ret))
+		}
+		type_name := strings.Split(gpu_type_name, " ")[1]
+		klog.Infof("GPU %d=%s\n", i, type_name)
+
 	}
-	fastconfigurator.Run(device_manager_ip_port)
+	fastconfigurator.Run(ctr_mgr_ip_port)
 
 }
 
 func init() {
-	flag.StringVar(&device_manager_ip_port, "devicemanager_ip_port", "127.0.0.1:10086", "The IP and Port to the FaST-GShare device manager.")
+	flag.StringVar(&ctr_mgr_ip_port, "ctr_mgr_ip_port", "fastpod-controller-manager-svc.kube-system.svc.cluster.local:10086", "The IP and Port to the FaST-GShare device manager.")
 }

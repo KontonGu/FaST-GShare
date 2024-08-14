@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fastgshare-node-daemon
+  namespace: kube-system
+  labels:
+    fastgshare: configurator-scheduler-node-daemon
+spec:
+  selector:
+    matchLabels:
+        fastgsahre: configurator-scheduler-node-daemon
+  template:
+    metadata:
+      labels:
+        fastgsahre: configurator-scheduler-node-daemon
+    spec:
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 0
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      containers:
+      - name: fast-configurator-ctn
+        image: kontonpuku666/fast-configurator:release
+        volumeMounts:
+        - name: fastpod-library
+          mountPath: "/fastpod/library"
+        - name: fastpod-scheduler
+          mountPath: "/fastpod/scheduler"
+        env:
+        - name: "FaSTPod_GPUClientsIP"
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+      - name: fastpod-fastscheduler-ctn
+        image: kontonpuku666/fastpod-fastscheduler:release
+        volumeMounts:
+        - name: fastpod-library
+          mountPath: "/fastpod/library"
+        - name: fastpod-scheduler
+          mountPath: "/fastpod/scheduler"
+      volumes:
+      - name: fastpod-library
+        hostPath:
+          path: "/fastpod/library"
+      - name: fastpod-scheduler
+        hostPath:
+          path: "/fastpod/scheduler"
+      
+        
+
+      
+
+    

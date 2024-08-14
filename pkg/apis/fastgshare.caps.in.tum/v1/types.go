@@ -32,9 +32,12 @@ const (
 	FaSTGShareGPUSMPartition   = "fastgshare/gpu_sm_partition"
 	FaSTGShareGPUMemory        = "fastgshare/gpu_mem"
 	FaSTGShareVGPUID           = "fastgshare/vgpu_id"
+	FaSTGShareVGPUType         = "fastgshare/vgpu_type"
+	FaSTGShareGPUsINfo         = "fastgshare/gpu_info"
 	FaSTGShareNodeName         = "fastgshare/nodeName"
 	FaSTGShareRole             = "fastgshare/role"
-	FaSTGShareDummpyPodName    = "fastgshare-vgpu"
+	FaSTGShareDummyPodName     = "fastgshare-vgpu"
+	FaSTGShareDummyPodUUID     = "fastgshare/vgpu_uuid"
 	OriginalNvidiaResourceName = "nvidia.com/gpu"
 )
 
@@ -93,7 +96,10 @@ type FaSTPodStatus struct {
 	// +optional
 	BoundDeviceIDs *map[string]string `json:"boundDeviceIDs,omitempty"`
 
-	//BoundDeviceID     string
+	//+optional
+	BoundDeviceType *map[string]string `json:"boundDeviceType,omitempty"`
+
+	//pod to corresponding gpu client port
 	GPUClientPort *map[string]int `json:"GPUClientPort,omitempty"`
 
 	//TODOs: add replicas spec for faas
@@ -149,7 +155,7 @@ func (this FaSTPod) PrintInfo() {
 }
 
 func GenerateGPUID(n int) string {
-	var letters = []rune("abcdefghijklmnopqrstuvwxyz")
+	var letters = []rune("1234567890abcdefghijklmnopqrstuvwxyz")
 	s := make([]rune, n)
 	for i := range s {
 		s[i] = letters[rand.Intn(len(letters))]

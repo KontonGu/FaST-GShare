@@ -1,5 +1,6 @@
 /*
 Copyright 2024 FaST-GShare Authors, KontonGu (Jianfeng Gu), et. al.
+@Techinical University of Munich, CAPS Cloud Team
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,7 +20,9 @@ package fastpodcontrollermanager
 import (
 	"container/list"
 	"context"
+	"errors"
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
@@ -30,6 +33,9 @@ import (
 	listers "github.com/KontonGu/FaST-GShare/pkg/client/listers/fastgshare.caps.in.tum/v1"
 
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	coreinformers "k8s.io/client-go/informers/core/v1"
@@ -41,7 +47,9 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
-	// k8scontroller "k8s.io/kubernetes/pkg/controller"
+
+	k8scontroller "k8s.io/kubernetes/pkg/controller"
+	"k8s.io/utils/integer"
 )
 
 const controllerAgentName = "fastpod-controller"
@@ -65,7 +73,11 @@ const (
 
 	FaSTPodLibraryDir  = "/fastpod/library"
 	SchedulerIpFile    = FaSTPodLibraryDir + "/schedulerIP.txt"
-	GPUClientPortStart = 58001
+	GPUClientPortStart = 56001
+	GPUSchedPortStart  = 52001
+
+	ErrValueError             = "ErrValueError"
+	SlowStartInitialBatchSize = 1
 )
 
 var (
@@ -86,7 +98,7 @@ type Controller struct {
 	nodesLister corelisters.NodeLister
 	nodesSynced cache.InformerSynced
 
-	// expectations *k8scontroller.UIDTrackingControllerExpectations
+	expectations *k8scontroller.UIDTrackingControllerExpectations
 
 	pendingList    *list.List
 	pendingListMux *sync.Mutex
@@ -119,7 +131,7 @@ func NewController(
 	utilruntime.Must(fastpodscheme.AddToScheme(kubescheme.Scheme))
 	klog.V(4).Info("Creating event broadcaster")
 
-	eventBroadcaster := record.NewBroadcaster(record.WithContext(ctx))
+	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(klog.Infof)
 	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: kubeclient.CoreV1().Events("")})
 	recorder := eventBroadcaster.NewRecorder(kubescheme.Scheme, corev1.EventSource{Component: controllerAgentName})
@@ -138,7 +150,7 @@ func NewController(
 		nodesLister: nodeinformer.Lister(),
 		nodesSynced: nodeinformer.Informer().HasSynced,
 
-		// expectations: k8scontroller.NewUIDTrackingControllerExpectations(k8scontroller.NewControllerExpectations()),
+		expectations: k8scontroller.NewUIDTrackingControllerExpectations(k8scontroller.NewControllerExpectations()),
 
 		pendingList:    list.New(),
 		pendingListMux: &sync.Mutex{},
@@ -195,28 +207,30 @@ func NewController(
 }
 
 // Run will set up the event handlers for types we are interested in, as well
-// as syncing informer caches and starting workers. It will block until stopCh
+// as syncing informer caches and starting workers. It will block until context
 // is closed, at which point it will shutdown the workqueue and wait for
 // workers to finish processing their current work items.
 
-// Try out without stopCh, rather with context
-func (c *Controller) Run(ctx context.Context, workers int) error {
+func (ctr *Controller) Run(ctx context.Context, workers int) error {
 	defer utilruntime.HandleCrash()
-	defer c.workqueue.ShutDown()
+	defer ctr.workqueue.ShutDown()
 
 	// Start the informer factories to begin populating the informer caches
 	klog.Info("Starting FaSTPod controller")
 
 	// Wait for the caches to be synced before starting workers
 	klog.Info("Waiting for informer caches to sync")
-	if ok := cache.WaitForCacheSync(ctx.Done(), c.podsSynced, c.fastpodsSynced); !ok {
+	if ok := cache.WaitForCacheSync(ctx.Done(), ctr.podsSynced, ctr.fastpodsSynced); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
+	ctr.gpuNodeInit()
+
+	go ctr.startConfigManager(ctx, ctr.kubeClient)
 	klog.Infof("Starting workers, Numuber of workers = %d.", workers)
 	// Launch two workers to process FaSTPod resources
 	for i := 0; i < workers; i++ {
-		go wait.UntilWithContext(ctx, c.runWorker, time.Second)
+		go wait.UntilWithContext(ctx, ctr.runWorker, time.Second)
 	}
 	klog.Info("Workers Started")
 	<-ctx.Done()
@@ -230,35 +244,536 @@ func (c *Controller) Run(ctx context.Context, workers int) error {
 // runWorker is a long-running function that will continually call the
 // processNextWorkItem function in order to read and process a message on the
 // workqueue.
-func (c *Controller) runWorker(ctx context.Context) {
-	for c.processNextWorkItem() {
+func (ctr *Controller) runWorker(ctx context.Context) {
+	for ctr.processNextWorkItem(ctx) {
 	}
 }
 
 // processNextWorkItem will read a single work item off the workqueue and
 // attempt to process it, by calling the syncHandler.
-func (c *Controller) processNextWorkItem() bool {
+func (ctr *Controller) processNextWorkItem(ctx context.Context) bool {
+	objRef, shutdown := ctr.workqueue.Get()
+	if shutdown {
+		return false
+	}
+
+	err := func(obj interface{}) error {
+		defer ctr.workqueue.Done(obj)
+		var key string
+		var ok bool
+		if key, ok = obj.(string); !ok {
+			ctr.workqueue.Forget(obj)
+			utilruntime.HandleError(fmt.Errorf("The object in the workqueue is not valid. obj=%#v", obj))
+			return nil
+		}
+		if err := ctr.syncHandler(ctx, key); err != nil {
+			if err.Error() == "Waiting4Dummy" {
+				ctr.workqueue.Add(key)
+				return fmt.Errorf("TESTING: need to wait for dummy pod '#{key}', requeueing")
+			}
+
+			ctr.workqueue.AddRateLimited(key)
+			return fmt.Errorf("Error while syncing the object = %s: %s. The object is re-queued.", key, err.Error())
+		}
+
+		ctr.workqueue.Forget(obj)
+		klog.Infof("Successfully sync the object = %s.", key)
+		return nil
+	}(objRef)
+
+	if err != nil {
+		utilruntime.HandleError(err)
+		return true
+	}
+
 	return true
 }
 
-func (c *Controller) enqueueFaSTPod(obj interface{}) {
+// syncHandler compares the actual state with the desired, and attempts to
+// converge the two. It then updates the Status block of the FaSTPod resource
+// with the current status of the resource.
+func (ctr *Controller) syncHandler(ctx context.Context, key string) error {
+	startTime := time.Now()
+	klog.V(2).Infof("Starting to sync FaSTPod %q (%v)", key, time.Since(startTime))
+	defer func() {
+		klog.V(4).Infof("Finished syncing FaSTPod %q (%v)", key, time.Since(startTime))
+	}()
 
-}
-
-func (c *Controller) handleDeletedFaSTPod(obj interface{}) {
-
-}
-
-func (c *Controller) handleObject(obj interface{}) {
-
-}
-
-func (c *Controller) resourceChanged(obj interface{}) {
-	// push pending FaSTPods into workqueue
-	c.pendingListMux.Lock()
-	for p := c.pendingList.Front(); p != nil; p = p.Next() {
-		c.workqueue.Add(p.Value)
+	namespace, name, err := cache.SplitMetaNamespaceKey(key)
+	if err != nil {
+		utilruntime.HandleError(fmt.Errorf("Error invalid resource key = %s.", key))
+		return nil
 	}
-	c.pendingList.Init()
-	c.pendingListMux.Unlock()
+
+	fastpod, err := ctr.fastpodsLister.FaSTPods(namespace).Get(name)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			utilruntime.HandleError(fmt.Errorf("Error FaSTPod '%s' is no longer existed when syncing it.", key))
+			return nil
+		}
+		return err
+	}
+
+	if fastpod.Spec.Replicas == nil {
+		klog.Infof("Waiting FaSTPod %v/%v replicas to be updated ...", namespace, name)
+		return nil
+	}
+
+	fastpodCopy := fastpod.DeepCopy()
+
+	if fastpodCopy.Spec.Selector == nil {
+		fastpodCopy.Spec.Selector = &metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				"app":        fastpodCopy.Name,
+				"controller": fastpodCopy.Name,
+			},
+		}
+	}
+
+	if fastpodCopy.Status.BoundDeviceIDs == nil {
+		boundIds := make(map[string]string)
+		fastpodCopy.Status.BoundDeviceIDs = &boundIds
+	}
+
+	if fastpodCopy.Status.Pod2Node == nil {
+		pod2Node := make(map[string]string)
+		fastpodCopy.Status.Pod2Node = &pod2Node
+	}
+
+	if fastpodCopy.Status.GPUClientPort == nil {
+		gpuclientPort := make(map[string]int)
+		fastpodCopy.Status.GPUClientPort = &gpuclientPort
+	}
+
+	if fastpodCopy.Status.Usage == nil {
+		usages := make(map[string]fastpodv1.FaSTPodUsage)
+		fastpodCopy.Status.Usage = &usages
+	}
+
+	syncFaSTPod := true
+	selector, err := metav1.LabelSelectorAsSelector(fastpodCopy.Spec.Selector)
+	if err != nil {
+		utilruntime.HandleError(fmt.Errorf("error converting pod selector to selector for the fastpod %v/%v: %v", namespace, name, err))
+	}
+	if selector == nil {
+		klog.Errorf("Error the selector of fastpod %s/%s is till nil...", namespace, name)
+		return nil
+	}
+
+	// list pods of a FaSTPod
+	allPods, err := ctr.podsLister.Pods(namespace).List(selector)
+	if err != nil {
+		klog.Errorf("Error cannot get pods of the FaSTPod = %s.", key)
+		return err
+	}
+
+	// Ignore inactive pods
+	filteredPods := filterInactivePods(allPods)
+	klog.Infof("The FaSTPod=%s/%s now has %s pods.", fastpodCopy.Namespace, fastpodCopy.Name, len(filteredPods))
+
+	// reconcile the replicas of the fastpod
+	var manageReplicasErr error
+	if syncFaSTPod {
+		manageReplicasErr = ctr.reconcileReplicas(ctx, filteredPods, fastpodCopy, key)
+	}
+	newStatus := getFaSTPodReplicaStatus(fastpodCopy, filteredPods, manageReplicasErr)
+
+	fastpodCopy.Status.AvailableReplicas = newStatus.AvailableReplicas
+	fastpodCopy.Status.ReadyReplicas = newStatus.ReadyReplicas
+	fastpodCopy.Status.Replicas = newStatus.Replicas
+	// TO-DO not finished
+}
+
+func (ctr *Controller) reconcileReplicas(ctx context.Context, existedPods []*corev1.Pod, fastpod *fastpodv1.FaSTPod, key string) error {
+
+	diff := len(existedPods) - int(*(fastpod.Spec.Replicas))
+	klog.Infof("Current FaSTPod = %s has %d replicas with specification spec = %d, diff = %d.", key, len(existedPods), int(*(fastpod.Spec.Replicas)), diff)
+
+	fstpKey, err := KeyFunc(fastpod)
+	if err != nil {
+		utilruntime.HandleError((fmt.Errorf("Error failed to get key of FaSTPod = %v %#v: %v.", fastpod.Kind, fastpod, err)))
+		return nil
+	}
+
+	fastpodCopy := fastpod.DeepCopy()
+
+	fstp2PodsMtx.Lock()
+	defer fstp2PodsMtx.Unlock()
+
+	// To create new pods if replicas is not enough
+	if diff < 0 {
+		// the number of pods to create
+		diff *= -1
+		ctr.expectations.ExpectCreations(fstpKey, diff)
+		klog.V(2).Infof("Not enough replicas for the FaSTPod ... \n need %d replicas, try to create %d replicas", *fastpodCopy.Spec.Replicas, diff)
+		successedNum, err := slowStartbatch(diff, k8scontroller.SlowStartInitialBatchSize, func() (*corev1.Pod, error) {
+			isValidFastpod := false
+			quotaReq := 0.0
+			quotaLimit := 0.0
+			smPartition := int64(100)
+			gpuMem := int64(0)
+
+			gpuDevUUID := ""
+			gpuClientPort := 0
+
+			// check the validity of fastpod resource configuration and get the resource configuration for a pod of FaSTPod
+			if fastpod.ObjectMeta.Annotations[fastpodv1.FaSTGShareGPUQuotaRequest] != "" ||
+				fastpod.ObjectMeta.Annotations[fastpodv1.FaSTGShareGPUQuotaLimit] != "" ||
+				fastpod.ObjectMeta.Annotations[fastpodv1.FaSTGShareGPUSMPartition] != "" {
+				var err error
+				objName := fastpod.ObjectMeta.Name
+				objNamesapce := fastpod.ObjectMeta.Namespace
+				tmpQLStr := fastpod.ObjectMeta.Annotations[fastpodv1.FaSTGShareGPUQuotaLimit]
+				quotaLimit, err = strconv.ParseFloat(tmpQLStr, 64)
+				if err != nil || quotaLimit > 1.0 || quotaLimit < 0.0 {
+					utilruntime.HandleError(fmt.Errorf("Error The FaSTPod = %s/%s has invalid quota limitation value %s.", objNamesapce, objName, tmpQLStr))
+					return nil, err
+				}
+
+				tmpQRStr := fastpod.ObjectMeta.Annotations[fastpodv1.FaSTGShareGPUQuotaRequest]
+				quotaReq, err = strconv.ParseFloat(tmpQRStr, 64)
+				if err != nil || quotaReq > 1.0 || quotaReq < 0.0 {
+					utilruntime.HandleError(fmt.Errorf("Error The FaSTPod = %s/%s has invalid quota request value %s.", objNamesapce, objName, quotaReq))
+					return nil, err
+				}
+
+				tmpSMPaStr := fastpod.ObjectMeta.Annotations[fastpodv1.FaSTGShareGPUSMPartition]
+				smPartition, err = strconv.ParseInt(tmpSMPaStr, 10, 64)
+				if err != nil || smPartition < 0 || smPartition > 100 {
+					utilruntime.HandleError(fmt.Errorf("Error The FaSTPod = %s/%s has invalid SM partition value %s.", objNamesapce, objName, tmpSMPaStr))
+					smPartition = int64(100)
+				}
+
+				tmpMemStr := fastpod.ObjectMeta.Annotations[fastpodv1.FaSTGShareGPUMemory]
+				gpuMem, err = strconv.ParseInt(tmpMemStr, 10, 64)
+				if err != nil || gpuMem < 0 {
+					utilruntime.HandleError(fmt.Errorf("Error The FaSTPod = %s/%s has invalid memory value %s.", objNamesapce, objName, gpuMem))
+				}
+				isValidFastpod = true
+			}
+
+			// get the node and gpu id (vGPU ID) the pod should be scheduled to based on the scheduling algorithm
+			var schedNode, schedvGPUID string
+			schedNode, schedvGPUID = ctr.schedule(fastpod, quotaReq, quotaLimit, smPartition, gpuMem, isValidFastpod, key)
+			if schedNode == "" {
+				return nil, errors.New("NoSchedNodeAvailable")
+			}
+			klog.Infof("The pod of FaSTPod = %s is scheduled to the node = %s with GPUID = %s", key, schedNode, schedvGPUID)
+
+			// generate the pod key for the new pod of FaSTPod
+			var subpodName string
+			var subpodKey string
+			if isValidFastpod {
+				var errCode int
+				fstpName := fastpodCopy.Name
+				if fstp2Pods[fstpName] == nil {
+					fstp2Pods[fstpName] = list.New()
+				}
+				newPodName := fstpName + "-" + RandStr(5)
+				subpodName = newPodName
+				subpodKey = fmt.Sprintf("%s/%s", fastpodCopy.ObjectMeta.Namespace, subpodName)
+
+				// get the gpu device uuid and update the pod resource configuration in configurator
+				gpuDevUUID, errCode = ctr.getGPUDevUUIDAndUpdateConfig(schedNode, schedvGPUID, quotaReq, quotaLimit, smPartition, gpuMem, subpodKey, &gpuClientPort)
+				klog.Infof("The pod = %s of FaSTPod %s with vGPUID = %s is bound to device UUID=%s with GPUClientPort=%s.", subpodKey, key, schedvGPUID, gpuDevUUID, gpuClientPort)
+
+				// errCode 0: no error
+				// errCode 1: node with nodeName is not initialized
+				// errCode 2: vGPUID is not initialized or no DummyPod created;
+				// errCode 3: resource exceed;
+				// errCode 4: GPU is out of memory
+				// errCode 5: No enough gpu client ports
+				switch errCode {
+				case 0:
+					klog.Infof("The pod is successfully bound.")
+					fstp2Pods[fstpName].PushBack(newPodName)
+				case 1:
+					return nil, errors.New("NodeNotInitialized")
+				case 2:
+					return nil, errors.New("Waiting4Dummy")
+				case 3:
+					err := fmt.Errorf("Compute Resource exceed!")
+					utilruntime.HandleError(err)
+					ctr.recorder.Event(fastpod, corev1.EventTypeWarning, ErrValueError, "Compute Resource exceed")
+					return nil, err
+				case 4:
+					err := fmt.Errorf("Out of memory!")
+					utilruntime.HandleError(err)
+					ctr.recorder.Event(fastpod, corev1.EventTypeWarning, ErrValueError, "Out of memory")
+					return nil, err
+				case 5:
+					err := fmt.Errorf("GPU Clients Port is full!")
+					utilruntime.HandleError(err)
+					ctr.recorder.Event(fastpod, corev1.EventTypeWarning, ErrValueError, "GPU Clients Port is not enough")
+					return nil, err
+				default:
+					err := fmt.Errorf("Unknown Error")
+					utilruntime.HandleError(err)
+					ctr.recorder.Event(fastpod, corev1.EventTypeWarning, ErrValueError, "Unknown Error")
+					return nil, err
+				}
+			}
+
+			// Create the new pod for the fastpod
+			if node, ok := nodesInfo[schedNode]; ok {
+				klog.Infof("Starting to create a new pod=%s of the fastpod=%s", subpodName, key)
+				newpod, err := ctr.kubeClient.CoreV1().Pods(fastpodCopy.Namespace).Create(context.TODO(), ctr.newPod(fastpod, false, node.DaemonIP, gpuClientPort, gpuDevUUID, schedNode, schedvGPUID, subpodName), metav1.CreateOptions{})
+				if err != nil {
+					klog.Errorf("Error when creating pod=%s for the FaSTPod=%s/%s.", subpodName, fastpod.Namespace, fastpod.Name)
+					if apierrors.HasStatusCause(err, corev1.NamespaceTerminatingCause) {
+						return nil, nil
+					}
+					return nil, err
+				}
+				(*fastpod.Status.BoundDeviceIDs)[newpod.Name] = schedvGPUID
+				(*fastpod.Status.GPUClientPort)[newpod.Name] = gpuClientPort
+				return newpod, err
+			}
+
+			return nil, nil
+
+		})
+
+		// to do
+		if skippedPodsNum := diff - successedNum; skippedPodsNum > 0 {
+			klog.V(2).Infof("The controller does not create enough pod for FaSTPod=%s, created Number:%d, falied number:%d.", key, successedNum, diff-successedNum)
+			for i := 0; i < skippedPodsNum; i++ {
+
+				//Decrement the expected number of creates because the informer won't observe this pod
+				ctr.expectations.CreationObserved(fstpKey)
+			}
+		}
+		return err
+	} else if diff > 0 { // Too many Replicas, to delete pod to reconcile the spec
+		klog.V(2).Infof("Too many replicas for the FaSTPod ... \n need %d replicas, try to delete %d replicas", *fastpodCopy.Spec.Replicas, diff)
+		podsToDelete := ctr.getPodsToDelete(existedPods, diff)
+
+		if podsToDelete == nil {
+			klog.V(2).Infof("The number of pods=%d to delete exceeds the existed pods=%d.", diff, len(existedPods))
+		}
+
+		ctr.expectations.ExpectDeletions(key, getPodKeys(podsToDelete))
+
+		errCh := make(chan error, diff)
+
+		var wg sync.WaitGroup
+		wg.Add(diff)
+		for _, pod := range podsToDelete {
+			go func(targetPod *corev1.Pod) {
+				podCopy := targetPod.DeepCopy()
+				defer func() {
+					wg.Done()
+					ctr.removePodFromList(fastpodCopy, podCopy)
+				}()
+				if err := ctr.kubeClient.CoreV1().Pods(targetPod.Namespace).Delete(ctx, targetPod.Name, metav1.DeleteOptions{}); err != nil {
+					podKey := k8scontroller.PodKey(targetPod)
+					ctr.expectations.DeletionObserved(key, podKey)
+					if !apierrors.IsNotFound(err) {
+						klog.V(2).Infof("Failed to delete pod=%s of the FaSTPod=%s.", podKey, key)
+						errCh <- err
+					}
+				}
+			}(pod)
+		}
+		wg.Wait()
+		select {
+		case err := <-errCh:
+			if err != nil {
+				return err
+			}
+		default:
+		}
+
+	}
+
+	return nil
+}
+
+// slowStartBatch tries to call the provided function a total of 'count' times,
+// starting slow to check for errors, then speeding up if calls succeed.
+//
+// It groups the calls into batches, starting with a group of initialBatchSize.
+// Within each batch, it may call the function multiple times concurrently.
+//
+// If a whole batch succeeds, the next batch may get exponentially larger.
+// If there are any failures in a batch, all remaining batches are skipped
+// after waiting for the current batch to complete.
+//
+// It returns the number of successful calls to the function.
+func slowStartbatch(count int, initailBatchSize int, fn func() (*corev1.Pod, error)) (int, error) {
+	remaining := count
+	successes := 0
+	need2wait := 0
+	for batchSize := integer.IntMin(remaining, initailBatchSize); batchSize > 0; batchSize = integer.IntMin(2*batchSize, remaining) {
+		errCh := make(chan error, batchSize)
+		var wg sync.WaitGroup
+		wg.Add(batchSize)
+		for i := 0; i < batchSize; i++ {
+			func() {
+				defer wg.Done()
+				if pod, err := fn(); err != nil {
+					if err.Error() != "Waiting4Dummy" {
+						//continue
+						errCh <- err
+					}
+					if pod == nil && err.Error() == "Waiting4Dummy" {
+						need2wait++
+					}
+
+				}
+			}()
+		}
+
+		wg.Wait()
+		curSuccesses := batchSize - len(errCh) - need2wait
+		successes += curSuccesses
+		if len(errCh) > 0 {
+			return successes, <-errCh
+		}
+		remaining -= batchSize
+	}
+	if need2wait > 0 {
+		return successes, errors.New("Waiting4Dmmy")
+	}
+	return successes, nil
+}
+
+// enqueue the object to the controller's workqueue
+func (ctr *Controller) enqueueFaSTPod(obj interface{}) {
+	var key string
+	var err error
+	if key, err = cache.MetaNamespaceKeyFunc(obj); err != nil {
+		utilruntime.HandleError(err)
+		return
+	}
+	ctr.workqueue.Add(key)
+}
+
+func (ctr *Controller) handleDeletedFaSTPod(obj interface{}) {
+
+}
+
+func (ctr *Controller) handleObject(obj interface{}) {
+
+}
+
+func (ctr *Controller) resourceChanged(obj interface{}) {
+	// push pending FaSTPods into workqueue
+	ctr.pendingListMux.Lock()
+	for p := ctr.pendingList.Front(); p != nil; p = p.Next() {
+		ctr.workqueue.Add(p.Value)
+	}
+	ctr.pendingList.Init()
+	ctr.pendingListMux.Unlock()
+}
+
+func (ctr *Controller) schedule(fastpod *fastpodv1.FaSTPod, quotaReq float64, quotaLimit float64, smPartition int64, gpuMem int64, isValid bool, key string) (string, string) {
+	return "", ""
+}
+
+// newPod create a new pod specification based on the given information for the FaSTPod
+func (ctr *Controller) newPod(fastpod *fastpodv1.FaSTPod, isWarm bool, schedIP string, gpuClientPort int, boundDevUUID, schedNode, schedvGPUID, podName string) *corev1.Pod {
+	specCopy := fastpod.Spec.PodSpec.DeepCopy()
+	specCopy.NodeName = schedNode
+
+	labelCopy := makeLabels(fastpod)
+	annotationCopy := make(map[string]string, len(fastpod.ObjectMeta.Annotations)+5)
+	for key, val := range fastpod.ObjectMeta.Annotations {
+		annotationCopy[key] = val
+	}
+
+	// TODO pre-warm setting for cold start issues, currently TODO...
+	if isWarm {
+		annotationCopy[FastGShareWarm] = "true"
+	} else {
+		annotationCopy[FastGShareWarm] = "false"
+	}
+
+	for i := range specCopy.Containers {
+		ctn := &specCopy.Containers[i]
+		ctn.Env = append(ctn.Env,
+			corev1.EnvVar{
+				Name:  "NVIDIA_VISIBLE_DEVICES",
+				Value: boundDevUUID,
+			},
+			corev1.EnvVar{
+				Name:  "NVIDIA_DRIVER_CAPABILITIES",
+				Value: "compute,utility",
+			},
+			corev1.EnvVar{
+				Name:  "LD_PRELOAD",
+				Value: FaSTPodLibraryDir + "/libfast.so.1",
+			},
+			corev1.EnvVar{
+				// the scheduler IP is not necessary since the hooked containers get it from /fastpod/library/GPUClientsIP.txt
+				Name:  "SCHEDULER_IP",
+				Value: schedIP,
+			},
+			corev1.EnvVar{
+				Name:  "GPU_CLIENT_PORT",
+				Value: fmt.Sprintf("%d", gpuClientPort),
+			},
+			corev1.EnvVar{
+				Name:  "POD_NAME",
+				Value: fmt.Sprintf("%s/%s", fastpod.ObjectMeta.Namespace, podName),
+			},
+		)
+		ctn.VolumeMounts = append(ctn.VolumeMounts,
+			corev1.VolumeMount{
+				Name:      "fastpod-lib",
+				MountPath: FaSTPodLibraryDir,
+			},
+			corev1.VolumeMount{
+				Name:      "nvidia-mps",
+				MountPath: "/tmp/nvidia-mps",
+			},
+		)
+		ctn.ImagePullPolicy = fastpod.Spec.PodSpec.Containers[0].ImagePullPolicy
+	}
+
+	specCopy.Volumes = append(specCopy.Volumes,
+		corev1.Volume{
+			Name: "fastpod-lib",
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: FaSTPodLibraryDir,
+				},
+			},
+		},
+		corev1.Volume{
+			Name: "nvidia-mps",
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: "/tmp/nvidia-mps",
+				},
+			},
+		},
+	)
+	annotationCopy[fastpodv1.FaSTGShareGPUQuotaRequest] = fastpod.ObjectMeta.Annotations[fastpodv1.FaSTGShareGPUQuotaRequest]
+	annotationCopy[fastpodv1.FaSTGShareGPUQuotaLimit] = fastpod.ObjectMeta.Annotations[fastpodv1.FaSTGShareGPUQuotaLimit]
+	annotationCopy[fastpodv1.FaSTGShareGPUMemory] = fastpod.ObjectMeta.Annotations[fastpodv1.FaSTGShareGPUMemory]
+	annotationCopy[fastpodv1.FaSTGShareVGPUID] = schedvGPUID
+
+	return &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      podName,
+			Namespace: fastpod.ObjectMeta.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(fastpod, schema.GroupVersionKind{
+					Group:   fastpodv1.SchemeGroupVersion.Group,
+					Version: fastpodv1.SchemeGroupVersion.Version,
+					Kind:    faasKind,
+				}),
+			},
+			Annotations: annotationCopy,
+			Labels:      labelCopy,
+		},
+		Spec: corev1.PodSpec{
+			NodeName:   schedNode,
+			Containers: specCopy.Containers,
+			Volumes:    specCopy.Volumes,
+			HostIPC:    true,
+			//InitContainers: []corev1.Container{},
+		},
+	}
 }

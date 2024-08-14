@@ -1,0 +1,30 @@
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: fastpod-controller-manager-svc-test
+  namespace: kube-system
+spec:
+  type: ClusterIP
+  selector:
+    app: nginx-fastpod
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+
+---
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-fastpod
+  namespace: kube-system
+  labels:
+    app: nginx-fastpod
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latest
+    ports:
+    - containerPort: 80

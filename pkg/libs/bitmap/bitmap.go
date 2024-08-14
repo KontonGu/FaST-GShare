@@ -40,7 +40,7 @@ func (b *Bitmap) Clear(pos int) error {
 	return nil
 }
 
-// Get obtains the value of bit，return true if it is 1，false if it is 0
+// Get, obtains the value of bit，return true if it is 1，false if it is 0
 func (b *Bitmap) Get(pos int) (bool, error) {
 	if pos < 0 || pos >= b.size {
 		return false, fmt.Errorf("position out of range")

@@ -1,7 +1,7 @@
 /*
  * Created/Modified on Mon May 27 2024
  *
- * Author: KontonGu
+ * Author: KontonGu (Jianfeng Gu)
  * Copyright (c) 2024 TUM - CAPS Cloud
  * Licensed under the Apache License, Version 2.0 (the "License")
  */
@@ -25,24 +25,27 @@ import (
 )
 
 var (
-	GPUClientsIPEnv = "FaSTPod-GPUClientsIP"
+	GPUClientsIPEnv = "FaSTPod_GPUClientsIP"
 )
 
 const (
-	GPUClientsIPFile       = "/fastpod/library/GPUClientsIP.txt"
-	FastSchedulerConfigDir = "/fastpod/scheduler/config"
-	GPUClientsPortConfigDir    = "/fastpod/scheduler/gpu_clients"
+	GPUClientsIPFile        = "/fastpod/library/GPUClientsIP.txt"
+	FastSchedulerConfigDir  = "/fastpod/scheduler/config"
+	GPUClientsPortConfigDir = "/fastpod/scheduler/gpu_clients"
+	HeartbeatItv            = 15
 )
 
 func Run(deviceCtrManager string) {
-	gcIpFile, err := os.Create(GPUClientsIPFile);
-	err != nil {
+	gcIpFile, err := os.Create(GPUClientsIPFile)
+	if err != nil {
 		klog.Errorf("Error Cannot create the GPUClientsIPFile = %s\n", GPUClientsIPFile)
 	}
+
 	st := os.Getenv(GPUClientsIPEnv) + "\n"
 	gcIpFile.WriteString(st)
 	gcIpFile.Sync()
 	gcIpFile.Close()
+	klog.Infof("Node Daemon, GPUClientsIP = %s.", st)
 
 	hostname, err := os.Hostname()
 	if err != nil {
@@ -51,27 +54,26 @@ func Run(deviceCtrManager string) {
 	}
 
 	os.MkdirAll(FastSchedulerConfigDir, os.ModePerm)
-	os.MkdirAll(GPUClientsConfigDir, os.ModePerm)
+	os.MkdirAll(GPUClientsPortConfigDir, os.ModePerm)
 
-	klog.Info("Trying to connet controller-manager....., server IP:Port = %s\n", deviceCtrManager)
+	klog.Infof("Trying to connet controller-manager....., server IP:Port = %s\n", deviceCtrManager)
 	conn, err := net.Dial("tcp", deviceCtrManager)
-	if err != nil{
+	if err != nil {
 		klog.Fatalf("Error Cannot connect to the device-controller-manager, IP:Port = %s .", deviceCtrManager)
 		panic(err)
 	}
 
-	klog.Info("Connection to the device-controller-manager succeed.")
+	klog.Info("The connection to the device-controller-manager succeed.")
 	reader := bufio.NewReader(conn)
 
 	writeMsgToConn(conn, "hostname:"+hostname+"\n")
 	registerGPUDevices(conn)
-	
-	nodeHeartbeater := time.NewTicker(time.Second * 15)
+
+	nodeHeartbeater := time.NewTicker(time.Second * time.Duration(HeartbeatItv))
 	go sendNodeHeartbeats(conn, nodeHeartbeater.C)
 
-	recvMsgDeviceCtrManager(reader)
+	recvMsgAndWriteConfig(reader)
 }
-
 
 func writeMsgToConn(conn net.Conn, st string) error {
 	_, err := conn.Write([]byte(st))
@@ -82,7 +84,7 @@ func writeMsgToConn(conn net.Conn, st string) error {
 	return nil
 }
 
-func registerGPUDevices(conn net.Conn){
+func registerGPUDevices(conn net.Conn) {
 	gpu_num, ret := nvml.DeviceGetCount()
 	if ret != nvml.SUCCESS {
 		klog.Fatalf("Unable to get device count: %v", nvml.ErrorString(ret))
@@ -104,7 +106,15 @@ func registerGPUDevices(conn net.Conn){
 		if ret != nvml.SUCCESS {
 			klog.Fatalf("Unable to get uuid of device at index %d: %v", i, nvml.ErrorString(ret))
 		}
-		buf.WriteString(uuid+":")
+
+		oriGPUType, ret := device.GetName()
+		if ret != nvml.SUCCESS {
+			klog.Fatalf("Unable to get name of device at index %d: %v", i, nvml.ErrorString(ret))
+		}
+		gpuTypeName := strings.Split(oriGPUType, " ")[1]
+
+		uuidWithType := uuid + "_" + gpuTypeName
+		buf.WriteString(uuidWithType + ":")
 		buf.WriteString(strconv.FormatUint(memsize, 10))
 		buf.WriteString(",")
 	}
@@ -114,17 +124,17 @@ func registerGPUDevices(conn net.Conn){
 
 }
 
-func sendNodeHeartbeats(conn net.Conn, heartTick <-chan){
+func sendNodeHeartbeats(conn net.Conn, heartTick <-chan time.Time) {
 	klog.Infof("Send node heartbeat to fastpod-controller-manager: %s\n", time.Now().String())
 	writeMsgToConn(conn, "heartbeat!\n")
 	for {
-		<- heartTick
+		<-heartTick
 		klog.Infof("Send node heartbeat to fastpod-controller-manager: %s\n", time.Now().String())
 		writeMsgToConn(conn, "heartbeat!\n")
 	}
 }
 
-func recvMsgFastCtrManager(reader *bufio.Reader){
+func recvMsgAndWriteConfig(reader *bufio.Reader) {
 	klog.Infof("Receiving Resource and Port Configuration from fastpod-controller-manager. \n")
 	for {
 		configMsg, err := reader.ReadString('\n')
@@ -136,18 +146,18 @@ func recvMsgFastCtrManager(reader *bufio.Reader){
 	}
 }
 
-func handleMsg(msg string){
+func handleMsg(msg string) {
 	klog.Infof("Received message from fastpod-controller-manager: %s", msg)
 	validMsg := string(msg[:len(msg)-1])
 	// write configuration to the scheudler configuration path
-	// original message uses ":" to separate field, "," to separate items of the field 
+	// The message uses ":" to separate field, "," to separate items of the field
 	msgParsed := strings.Split(validMsg, ":")
 	if len(msgParsed) != 3 {
 		klog.Errorf("Error Received wrong format of configuration msg: %s\n", validMsg)
 		return
 	}
 	uuid, fastSchedConf, gpuClientsPort := msgParsed[0], msgParsed[1], msgParsed[2]
-	
+	klog.Infof("Received gpu confiugration message, uuid=%s, fastSchedConf=%s, gpuClientPort=%s", msgParsed[0], msgParsed[1], msgParsed[2])
 	confPath := filepath.Join(FastSchedulerConfigDir, uuid)
 	confFile, err := os.Create(confPath)
 	if err != nil {
@@ -157,9 +167,9 @@ func handleMsg(msg string){
 	gcPortFilePath := filepath.Join(GPUClientsPortConfigDir, uuid)
 	gcPortFile, err := os.Create(gcPortFilePath)
 	if err != nil {
-		klog.Errorf("Error failed to create the gpu clients' port configuration file: %s\n.", confPath)
+		klog.Errorf("Error failed to create the gpu clients' port configuration file: %s\n.", gcPortFilePath)
 	}
-	
+
 	confFile.WriteString(fmt.Sprintf("%d\n", strings.Count(fastSchedConf, ",")))
 	confFile.WriteString(strings.ReplaceAll(fastSchedConf, ",", "\n"))
 	confFile.Sync()

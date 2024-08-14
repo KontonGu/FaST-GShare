@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+  labels:
+    app: nginx
+  namespace: kube-system
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latest
+    ports:
+    - containerPort: 10087
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+  namespace: kube-system
+spec:
+  selector:
+    app: nginx
+  ports:
+  - protocol: TCP
+    port: 10087
+    targetPort: 10087
+  type: ClusterIP
