@@ -68,7 +68,7 @@ const (
 	// is synced successfully
 	MessageResourceSynced = "FaSTPod synced successfully"
 
-	faasKind       = "FaSTPod"
+	fastpodKind    = "FaSTPod"
 	FastGShareWarm = "fast-gshare/warmpool"
 
 	FaSTPodLibraryDir  = "/fastpod/library"
@@ -381,9 +381,20 @@ func (ctr *Controller) syncHandler(ctx context.Context, key string) error {
 	fastpodCopy.Status.AvailableReplicas = newStatus.AvailableReplicas
 	fastpodCopy.Status.ReadyReplicas = newStatus.ReadyReplicas
 	fastpodCopy.Status.Replicas = newStatus.Replicas
-	// TO-DO not finished
+
+	updatedFastpod, err := ctr.fastpodClient.FastgshareV1().FaSTPods(fastpodCopy.Namespace).Update(context.TODO(), fastpodCopy, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+
+	if manageReplicasErr != nil && updatedFastpod.Status.ReadyReplicas == *(updatedFastpod.Spec.Replicas) &&
+		updatedFastpod.Status.AvailableReplicas != *(updatedFastpod.Spec.Replicas) {
+		ctr.enqueueFaSTPod(updatedFastpod)
+	}
+	return manageReplicasErr
 }
 
+// reconcile the spec.Replicas and existed replcias
 func (ctr *Controller) reconcileReplicas(ctx context.Context, existedPods []*corev1.Pod, fastpod *fastpodv1.FaSTPod, key string) error {
 
 	diff := len(existedPods) - int(*(fastpod.Spec.Replicas))
@@ -654,6 +665,45 @@ func (ctr *Controller) handleDeletedFaSTPod(obj interface{}) {
 }
 
 func (ctr *Controller) handleObject(obj interface{}) {
+	var object metav1.Object
+	var ok bool
+	if object, ok = obj.(metav1.Object); !ok {
+		tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
+		if !ok {
+			// If the object value is not too big and does not contain sensitive information then
+			// it may be useful to include it.
+			utilruntime.HandleError(fmt.Errorf("Error decoding object, invalid type, type = %T", obj))
+			return
+		}
+		object, ok = tombstone.Obj.(metav1.Object)
+		if !ok {
+			// If the object value is not too big and does not contain sensitive information then
+			// it may be useful to include it.
+			utilruntime.HandleError(fmt.Errorf("Error decoding object tombstone, invalid type, type = %T", tombstone.Obj))
+			return
+		}
+		klog.V(4).Info("Recovered deleted object", "resourceName", object.GetName())
+	}
+	klog.V(4).Info("Processing object", "object", klog.KObj(object))
+
+	// TODO logic to handle dummyPod if the status is "PodFailed"
+	// dummyPod handling
+
+	// enqueue FaSTPod key if it is a pod of a FaSTPod
+	if ownerRef := metav1.GetControllerOf(object); ownerRef != nil {
+		if ownerRef.Kind != fastpodKind {
+			return
+		}
+
+		fastpod, err := ctr.fastpodsLister.FaSTPods(object.GetNamespace()).Get(ownerRef.Name)
+		if err != nil {
+			klog.V(4).Infof("Ignoring orphaned object '%s' of FaSTPod '%s'", object.GetSelfLink(), ownerRef.Name)
+			return
+		}
+		klog.Infof("The pod=%s of the FaSTPod = %s is to be processed ...", object.GetName(), ownerRef.Name)
+		ctr.enqueueFaSTPod(fastpod)
+		return
+	}
 
 }
 
@@ -665,10 +715,6 @@ func (ctr *Controller) resourceChanged(obj interface{}) {
 	}
 	ctr.pendingList.Init()
 	ctr.pendingListMux.Unlock()
-}
-
-func (ctr *Controller) schedule(fastpod *fastpodv1.FaSTPod, quotaReq float64, quotaLimit float64, smPartition int64, gpuMem int64, isValid bool, key string) (string, string) {
-	return "", ""
 }
 
 // newPod create a new pod specification based on the given information for the FaSTPod
@@ -762,7 +808,7 @@ func (ctr *Controller) newPod(fastpod *fastpodv1.FaSTPod, isWarm bool, schedIP s
 				*metav1.NewControllerRef(fastpod, schema.GroupVersionKind{
 					Group:   fastpodv1.SchemeGroupVersion.Group,
 					Version: fastpodv1.SchemeGroupVersion.Version,
-					Kind:    faasKind,
+					Kind:    fastpodKind,
 				}),
 			},
 			Annotations: annotationCopy,

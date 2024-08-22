@@ -1,6 +1,7 @@
 #include <iostream>
 #include <nvml.h>
 #include <unistd.h>
+#include <sstream>
 
 int main(){
     nvmlReturn_t result;
@@ -37,7 +38,19 @@ int main(){
             continue;
         }
 
-        std::cout << deviceUUID << std::endl;
+         // Get the gpu name
+        char gpu_name[NVML_DEVICE_NAME_BUFFER_SIZE];
+        result = nvmlDeviceGetName(device, gpu_name, NVML_DEVICE_NAME_BUFFER_SIZE);
+        if (result != NVML_SUCCESS) {
+            std::cerr << "Failed to get name of device " << i << ": " << nvmlErrorString(result) << std::endl;
+            continue;
+        }
+        std::stringstream ss(gpu_name); 
+        std::string gpu_type,tmp;
+        ss >> tmp;
+        ss >> gpu_type;
+        
+        std::cout << deviceUUID << ":" << gpu_type << std::endl;
      }
 
     result = nvmlShutdown();

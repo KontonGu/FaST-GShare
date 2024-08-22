@@ -51,7 +51,7 @@ func main() {
 
 	// set up signals so we handle the shutdown signal gracefully
 	ctx := signals.SetupSignalHandler()
-	logger := klog.FromContext(ctx)
+	// logger := klog.FromContext(ctx)
 
 	if kubeconfig == "" {
 		kubeconfig = filepath.Join(os.Getenv("HOME"), ".kube/config")
@@ -59,7 +59,7 @@ func main() {
 
 	cfg, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfig)
 	if err != nil {
-		logger.Error(err, "Error building kubeconfig")
+		klog.Error("Error building kubeconfig")
 		klog.FlushAndExit(klog.ExitFlushTimeout, 1)
 	}
 
@@ -68,13 +68,13 @@ func main() {
 
 	kubeClient, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
-		logger.Error(err, "Error building kubernetes clientset")
+		klog.Error("Error building kubernetes clientset")
 		klog.FlushAndExit(klog.ExitFlushTimeout, 1)
 	}
 
 	fastpodClient, err := clientset.NewForConfig(cfg)
 	if err != nil {
-		logger.Error(err, "Error building kubernetes clientset")
+		klog.Error(err, "Error building kubernetes clientset")
 		klog.FlushAndExit(klog.ExitFlushTimeout, 1)
 	}
 
@@ -95,7 +95,7 @@ func main() {
 	fastpodInformerFactory.Start(ctx.Done())
 
 	if err = controller.Run(ctx, workerNum); err != nil {
-		logger.Error(err, "Error running controller")
+		klog.Error("Error running controller")
 		klog.FlushAndExit(klog.ExitFlushTimeout, 1)
 	}
 

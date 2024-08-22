@@ -461,7 +461,7 @@ func (ctr *Controller) removePodFromList(fastpod *fastpodv1.FaSTPod, pod *corev1
 					}
 					node.DaemonPortAlloc.Clear(podreq.GPUClientPort - GPUClientPortStart)
 
-					// currently the release of the physical gpu s disabled, we manage all the gpus
+					// currently the release of the physical gpu is disabled, fastgshare manages all the gpus
 					if remove {
 						ctr.deleteDummyPod(nodeName, vGPUID, uuid)
 					}

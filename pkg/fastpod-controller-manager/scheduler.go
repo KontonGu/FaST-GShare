@@ -15,3 +15,22 @@ limitations under the License.
 */
 
 package fastpodcontrollermanager
+
+import fastpodv1 "github.com/KontonGu/FaST-GShare/pkg/apis/fastgshare.caps.in.tum/v1"
+
+func (ctr *Controller) schedule(fastpod *fastpodv1.FaSTPod, quotaReq float64, quotaLimit float64, smPartition int64, gpuMem int64, isValid bool, key string) (string, string) {
+	// nodeList, err := ctr.nodesLister.List(labels.Set{"gpu": "present"}.AsSelector())
+	// if err != nil {
+	// 	errInfo := fmt.Errorf("Error Cannot find gpu node with the lable \"gpu:present\"")
+	// 	utilruntime.HandleError(errInfo)
+	// }
+	schedNode := "kgpu1"
+	nodesInfoMtx.Lock()
+	defer nodesInfoMtx.Unlock()
+	node := nodesInfo[schedNode]
+	var vgpuID string
+	for key, _ := range node.vGPUID2GPU {
+		vgpuID = key
+	}
+	return "kgpu1", vgpuID
+}

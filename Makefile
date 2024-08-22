@@ -42,6 +42,12 @@ fastpod-controller-manager:
 build-fastpod-controller-manager-container:
 	docker build -t ${DOCKER_USER}/fastpod-controller-manager:release -f docker/fastpod-controller-manager/Dockerfile .
 
+.PHONY: test-build-fastpod-controller-manager-container
+test-build-fastpod-controller-manager-container:
+	docker build -t ${DOCKER_USER}/fastpod-controller-manager:controller_test -f docker/fastpod-controller-manager/Dockerfile .
+	docker push ${DOCKER_USER}/fastpod-controller-manager:controller_test 
+	sudo ctr -n k8s.io i rm ${DOCKER_USER}/fastpod-controller-manager:controller_test
+
 .PHONY: upload-fastpod-controller-manager-image
 upload-fastpod-controller-manager-image:
 	docker push ${DOCKER_USER}/fastpod-controller-manager:release 
