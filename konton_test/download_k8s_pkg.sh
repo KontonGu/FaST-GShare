@@ -1,5 +1,4 @@
 #!/bin/bash
-
 VERSION=${1#"v"}
 if [ -z "$VERSION" ]; then
   echo "Please specify the Kubernetes version: e.g."

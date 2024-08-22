@@ -49,9 +49,8 @@ func main() {
 	klog.InitFlags(nil)
 	flag.Parse()
 
-	// set up signals so we handle the shutdown signal gracefully
-	ctx := signals.SetupSignalHandler()
-	// logger := klog.FromContext(ctx)
+	// set up signals so we handle the first shutdown signal gracefully
+	stopCh := signals.SetupSignalHandler()
 
 	if kubeconfig == "" {
 		kubeconfig = filepath.Join(os.Getenv("HOME"), ".kube/config")
@@ -59,7 +58,7 @@ func main() {
 
 	cfg, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfig)
 	if err != nil {
-		klog.Error("Error building kubeconfig")
+		klog.Fatalf("Error building kubeconfig: %s", err.Error())
 		klog.FlushAndExit(klog.ExitFlushTimeout, 1)
 	}
 
@@ -68,13 +67,13 @@ func main() {
 
 	kubeClient, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
-		klog.Error("Error building kubernetes clientset")
+		klog.Fatalf("Error building kubernetes clientset: %s", err.Error())
 		klog.FlushAndExit(klog.ExitFlushTimeout, 1)
 	}
 
 	fastpodClient, err := clientset.NewForConfig(cfg)
 	if err != nil {
-		klog.Error(err, "Error building kubernetes clientset")
+		klog.Fatalf("Error building kubernetes clientset: %s", err.Error())
 		klog.FlushAndExit(klog.ExitFlushTimeout, 1)
 	}
 
@@ -86,16 +85,16 @@ func main() {
 	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
 	fastpodInformerFactory := informers.NewSharedInformerFactory(fastpodClient, time.Second*30)
 
-	controller := fastpodcontrollermanager.NewController(ctx, kubeClient, fastpodClient,
+	controller := fastpodcontrollermanager.NewController(kubeClient, fastpodClient,
 		kubeInformerFactory.Core().V1().Nodes(),
 		kubeInformerFactory.Core().V1().Pods(),
 		fastpodInformerFactory.Fastgshare().V1().FaSTPods())
 
-	kubeInformerFactory.Start(ctx.Done())
-	fastpodInformerFactory.Start(ctx.Done())
+	kubeInformerFactory.Start(stopCh)
+	fastpodInformerFactory.Start(stopCh)
 
-	if err = controller.Run(ctx, workerNum); err != nil {
-		klog.Error("Error running controller")
+	if err = controller.Run(stopCh, workerNum); err != nil {
+		klog.Fatalf("Error running controller: %s", err.Error())
 		klog.FlushAndExit(klog.ExitFlushTimeout, 1)
 	}
 

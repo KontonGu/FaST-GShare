@@ -55,7 +55,6 @@ var (
 	configNetAddr    string = "0.0.0.0:10086"
 	checkTickerItv   int    = 60
 	kubeClient       kubernetes.Interface
-	ctxClient        context.Context
 )
 
 func init() {
@@ -64,7 +63,7 @@ func init() {
 
 // listen and initialize the gpu information received from each node and periodically check liveness of node;
 // send pods' resource configuration to the node's configurator
-func (ctr *Controller) startConfigManager(ctx context.Context, kube_client kubernetes.Interface) error {
+func (ctr *Controller) startConfigManager(stopCh <-chan struct{}, kube_client kubernetes.Interface) error {
 	klog.Infof("Starting the configuration manager of the controller manager .... ")
 	// listenr of the socket connection from the configurator of each node
 	connListen, err := net.Listen("tcp", configNetAddr)
@@ -79,7 +78,6 @@ func (ctr *Controller) startConfigManager(ctx context.Context, kube_client kuber
 	go ctr.checkNodeLiveness(checkTicker.C)
 
 	kubeClient = kube_client
-	ctxClient = ctx
 	klog.Infof("Listening to the nodes' connection .... ")
 	// accept each node connection
 	for {
@@ -131,7 +129,7 @@ func (ctr *Controller) initNodeInfo(conn net.Conn) {
 		return
 	}
 	daemonPodName := parts[1][:len(parts[1])-1]
-	daemonPod, err := kubeClient.CoreV1().Pods("kube-system").Get(ctxClient, daemonPodName, metav1.GetOptions{})
+	daemonPod, err := kubeClient.CoreV1().Pods("kube-system").Get(context.TODO(), daemonPodName, metav1.GetOptions{})
 	if err != nil {
 		klog.Errorf("Error cannot find the node daemonset.")
 		return

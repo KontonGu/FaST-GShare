@@ -118,7 +118,6 @@ type Controller struct {
 
 // NewController returns a new FaSTPod controller
 func NewController(
-	ctx context.Context,
 	kubeclient kubernetes.Interface,
 	fastpodclient clientset.Interface,
 	nodeinformer coreinformers.NodeInformer,
@@ -211,7 +210,7 @@ func NewController(
 // is closed, at which point it will shutdown the workqueue and wait for
 // workers to finish processing their current work items.
 
-func (ctr *Controller) Run(ctx context.Context, workers int) error {
+func (ctr *Controller) Run(stopCh <-chan struct{}, workers int) error {
 	defer utilruntime.HandleCrash()
 	defer ctr.workqueue.ShutDown()
 
@@ -220,20 +219,20 @@ func (ctr *Controller) Run(ctx context.Context, workers int) error {
 
 	// Wait for the caches to be synced before starting workers
 	klog.Info("Waiting for informer caches to sync")
-	if ok := cache.WaitForCacheSync(ctx.Done(), ctr.podsSynced, ctr.fastpodsSynced); !ok {
+	if ok := cache.WaitForCacheSync(stopCh, ctr.podsSynced, ctr.fastpodsSynced); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
 	ctr.gpuNodeInit()
 
-	go ctr.startConfigManager(ctx, ctr.kubeClient)
+	go ctr.startConfigManager(stopCh, ctr.kubeClient)
 	klog.Infof("Starting workers, Numuber of workers = %d.", workers)
 	// Launch two workers to process FaSTPod resources
 	for i := 0; i < workers; i++ {
-		go wait.UntilWithContext(ctx, ctr.runWorker, time.Second)
+		go wait.Until(ctr.runWorker, time.Second, stopCh)
 	}
 	klog.Info("Workers Started")
-	<-ctx.Done()
+	<-stopCh
 	klog.Info("Shutting down workers")
 	// pendingInsuranceTicker.Stop()
 	// pendingInsuranceDone <- true
@@ -244,14 +243,14 @@ func (ctr *Controller) Run(ctx context.Context, workers int) error {
 // runWorker is a long-running function that will continually call the
 // processNextWorkItem function in order to read and process a message on the
 // workqueue.
-func (ctr *Controller) runWorker(ctx context.Context) {
-	for ctr.processNextWorkItem(ctx) {
+func (ctr *Controller) runWorker() {
+	for ctr.processNextWorkItem() {
 	}
 }
 
 // processNextWorkItem will read a single work item off the workqueue and
 // attempt to process it, by calling the syncHandler.
-func (ctr *Controller) processNextWorkItem(ctx context.Context) bool {
+func (ctr *Controller) processNextWorkItem() bool {
 	objRef, shutdown := ctr.workqueue.Get()
 	if shutdown {
 		return false
@@ -266,7 +265,7 @@ func (ctr *Controller) processNextWorkItem(ctx context.Context) bool {
 			utilruntime.HandleError(fmt.Errorf("The object in the workqueue is not valid. obj=%#v", obj))
 			return nil
 		}
-		if err := ctr.syncHandler(ctx, key); err != nil {
+		if err := ctr.syncHandler(key); err != nil {
 			if err.Error() == "Waiting4Dummy" {
 				ctr.workqueue.Add(key)
 				return fmt.Errorf("TESTING: need to wait for dummy pod '#{key}', requeueing")
@@ -292,7 +291,7 @@ func (ctr *Controller) processNextWorkItem(ctx context.Context) bool {
 // syncHandler compares the actual state with the desired, and attempts to
 // converge the two. It then updates the Status block of the FaSTPod resource
 // with the current status of the resource.
-func (ctr *Controller) syncHandler(ctx context.Context, key string) error {
+func (ctr *Controller) syncHandler(key string) error {
 	startTime := time.Now()
 	klog.V(2).Infof("Starting to sync FaSTPod %q (%v)", key, time.Since(startTime))
 	defer func() {
@@ -374,7 +373,7 @@ func (ctr *Controller) syncHandler(ctx context.Context, key string) error {
 	// reconcile the replicas of the fastpod
 	var manageReplicasErr error
 	if syncFaSTPod {
-		manageReplicasErr = ctr.reconcileReplicas(ctx, filteredPods, fastpodCopy, key)
+		manageReplicasErr = ctr.reconcileReplicas(context.TODO(), filteredPods, fastpodCopy, key)
 	}
 	newStatus := getFaSTPodReplicaStatus(fastpodCopy, filteredPods, manageReplicasErr)
 
@@ -684,7 +683,6 @@ func (ctr *Controller) handleObject(obj interface{}) {
 		}
 		klog.V(4).Info("Recovered deleted object", "resourceName", object.GetName())
 	}
-	klog.V(4).Info("Processing object", "object", klog.KObj(object))
 
 	// TODO logic to handle dummyPod if the status is "PodFailed"
 	// dummyPod handling
@@ -694,7 +692,7 @@ func (ctr *Controller) handleObject(obj interface{}) {
 		if ownerRef.Kind != fastpodKind {
 			return
 		}
-
+		klog.V(4).Info("Processing object ", "object = ", klog.KObj(object))
 		fastpod, err := ctr.fastpodsLister.FaSTPods(object.GetNamespace()).Get(ownerRef.Name)
 		if err != nil {
 			klog.V(4).Infof("Ignoring orphaned object '%s' of FaSTPod '%s'", object.GetSelfLink(), ownerRef.Name)
