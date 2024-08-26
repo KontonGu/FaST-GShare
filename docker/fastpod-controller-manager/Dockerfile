@@ -20,7 +20,8 @@ ENV NVIDIA_DRIVER_CAPABILITIES=utility
 
 COPY --from=build /go/src/github.com/KontonGu/FaST-GShare/cmd/fastpod-controller-manager/fastpodcontrollermanager /usr/bin/fastpodcontrollermanager
 
-CMD ["fastpodcontrollermanager", "-alsologtostderr", "-v=4"]
+# CMD ["fastpodcontrollermanager", "-alsologtostderr", "-v=4"]
+CMD [ "fastpodcontrollermanager", "-alsologtostderr"]
 
 
 

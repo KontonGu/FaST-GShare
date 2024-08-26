@@ -1,0 +1,25 @@
+apiVersion: fastgshare.caps.in.tum/v1
+kind: FaSTPod
+metadata:
+  name: test-fastpod
+  annotations: 
+    fastgshare/gpu_quota_request: "0.3"
+    fastgshare/gpu_quota_limit: "0.4"
+    fastgshare/gpu_sm_partition: "30"
+    fastgshare/gpu_mem: "4700000000"
+spec:
+  replicas: 2
+  podSpec:
+    containers:
+    - name: resnet-pytorch
+      image: docker.io/kontonpuku666/mlperf-resnet:pytorch
+      volumeMounts:
+          - name: "model-volume"
+            mountPath: "/models/"
+    volumes:
+        - name: "model-volume"
+          hostPath:
+            path: "/models/"
+  
+  
+    

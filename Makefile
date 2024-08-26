@@ -69,6 +69,9 @@ fast-configurator:
 	@cd $(FAST_CONFIG_BUILD_DIR) && go build -o $(FAST_CONFIG_BINARY_NAME)
 	@echo "Build complete. Binary is located at $(FAST_CONFIG_OUTPUT_DIR)/$(FAST_CONFIGBINARY_NAME)"
 
+.PHONY: test-fast-configurator-container
+test-fast-configurator-container: build-fast-configurator-container upload-fast-configurator-image clean-ctr-fast-configurator-image
+
 .PHONY: build-fast-configurator-container
 build-fast-configurator-container:
 	docker build -t ${DOCKER_USER}/fast-configurator:release -f docker/fast-configurator/Dockerfile .

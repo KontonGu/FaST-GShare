@@ -31,6 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/klog/v2"
 )
 
@@ -469,4 +470,56 @@ func (ctr *Controller) removePodFromList(fastpod *fastpodv1.FaSTPod, pod *corev1
 			}
 		}
 	}
+}
+
+// Remove the FaSTPod instance, update fastpod podlist in nodesInfo and
+// delete the pods of the fastpod.
+func (ctr *Controller) removeFaSTPodFromList(fastpod *fastpodv1.FaSTPod) {
+	selector, err := metav1.LabelSelectorAsSelector(fastpod.Spec.Selector)
+	if err != nil {
+		utilruntime.HandleError(err)
+	}
+	namespace := fastpod.Namespace
+	pods, err := ctr.podsLister.Pods(namespace).List(selector)
+	if err != nil {
+		utilruntime.HandleError(err)
+	}
+
+	nodesInfoMtx.Lock()
+	defer nodesInfoMtx.Unlock()
+
+	for _, pod := range pods {
+		nodeName := pod.Spec.NodeName
+		vgpuID := pod.Annotations[fastpodv1.FaSTGShareVGPUID]
+		key := fmt.Sprintf("%s/%s", pod.ObjectMeta.Namespace, pod.ObjectMeta.Name)
+
+		if node, nodeOk := nodesInfo[nodeName]; nodeOk {
+			if gpu, gpuOk := node.vGPUID2GPU[vgpuID]; gpuOk {
+				podlist := gpu.PodList
+				// delete pod information in the nodesInfo
+				for podreq := podlist.Front(); podreq != nil; podreq = podreq.Next() {
+					podreqValue := podreq.Value.(*PodReq)
+					if podreqValue.Key == key {
+						klog.Infof("Removing the pod = %s of the FaSTPod = %s ....", key, fastpod.Name)
+						podlist.Remove(podreq)
+						uuid := gpu.UUID
+
+						gpu.Usage -= podreqValue.QtRequest * (float64(podreqValue.SMPartition) / 100.0)
+						gpu.UsageMem -= podreqValue.Memory
+						ctr.updatePodsGPUConfig(nodeName, uuid, podlist)
+						node.DaemonPortAlloc.Clear(podreqValue.GPUClientPort - GPUClientPortStart)
+						continue
+					}
+				}
+				// delete the pod in the kube system
+				err := ctr.kubeClient.CoreV1().Pods(namespace).Delete(context.Background(), pod.Name, metav1.DeleteOptions{})
+				if err != nil {
+					klog.Errorf("Error when Removing the pod = %s of the FaSTPod = %s", key, fastpod.Name)
+				} else {
+					klog.Infof("Finish removing the pod = %s of the FaSTPod = %s.", key, fastpod.Name)
+				}
+			}
+		}
+	}
+
 }

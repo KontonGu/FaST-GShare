@@ -32,7 +32,9 @@ const (
 	GPUClientsIPFile        = "/fastpod/library/GPUClientsIP.txt"
 	FastSchedulerConfigDir  = "/fastpod/scheduler/config"
 	GPUClientsPortConfigDir = "/fastpod/scheduler/gpu_clients"
-	HeartbeatItv            = 15
+	HeartbeatItv            = 60
+	MaxConnRetries          = 15
+	RetryItv                = 10
 )
 
 func Run(deviceCtrManager string) {
@@ -57,9 +59,20 @@ func Run(deviceCtrManager string) {
 	os.MkdirAll(GPUClientsPortConfigDir, os.ModePerm)
 
 	klog.Infof("Trying to connet controller-manager....., server IP:Port = %s\n", deviceCtrManager)
-	conn, err := net.Dial("tcp", deviceCtrManager)
-	if err != nil {
-		klog.Fatalf("Error Cannot connect to the device-controller-manager, IP:Port = %s .", deviceCtrManager)
+	retryCount := 0
+	var conn net.Conn
+	for retryCount < MaxConnRetries {
+		conn, err = net.Dial("tcp", deviceCtrManager)
+		if err != nil {
+			klog.Errorf("Error Failed to connect (attempt %d/%d) the device-controller-manager, IP:Port = %s, : %v .", retryCount+1, MaxConnRetries, deviceCtrManager, err)
+			klog.Errorf("Retrying in %d seconds...", RetryItv)
+			retryCount++
+			time.Sleep(RetryItv * time.Second)
+			continue
+		}
+		break
+	}
+	if retryCount+1 >= MaxConnRetries {
 		panic(err)
 	}
 
@@ -157,7 +170,7 @@ func handleMsg(msg string) {
 		return
 	}
 	uuid, fastSchedConf, gpuClientsPort := msgParsed[0], msgParsed[1], msgParsed[2]
-	klog.Infof("Received gpu confiugration message, uuid=%s, fastSchedConf=%s, gpuClientPort=%s", msgParsed[0], msgParsed[1], msgParsed[2])
+	klog.Infof("The gpu confiugration message, uuid=%s, fastSchedConf=%s, gpuClientPort=%s", msgParsed[0], msgParsed[1], msgParsed[2])
 	confPath := filepath.Join(FastSchedulerConfigDir, uuid)
 	confFile, err := os.Create(confPath)
 	if err != nil {

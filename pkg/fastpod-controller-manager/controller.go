@@ -167,7 +167,8 @@ func NewController(
 			oldFstp := old.(*fastpodv1.FaSTPod)
 			klog.Infof("DEBUG: updating FaSTPod %s with replica %d ", newFstp.Name, *newFstp.Spec.Replicas)
 			klog.Infof("DEBUG: queue length %d", controller.workqueue.Len())
-			if newFstp.ResourceVersion == oldFstp.ResourceVersion {
+			if newFstp.ResourceVersion != oldFstp.ResourceVersion {
+				klog.Infof("FaSTPod has different ResourceVersion, update the FaSTPod.")
 				controller.enqueueFaSTPod(new)
 				return
 			}
@@ -368,7 +369,7 @@ func (ctr *Controller) syncHandler(key string) error {
 
 	// Ignore inactive pods
 	filteredPods := filterInactivePods(allPods)
-	klog.Infof("The FaSTPod=%s/%s now has %s pods.", fastpodCopy.Namespace, fastpodCopy.Name, len(filteredPods))
+	klog.Infof("The FaSTPod=%s/%s now has %d pods.", fastpodCopy.Namespace, fastpodCopy.Name, len(filteredPods))
 
 	// reconcile the replicas of the fastpod
 	var manageReplicasErr error
@@ -377,17 +378,22 @@ func (ctr *Controller) syncHandler(key string) error {
 	}
 	newStatus := getFaSTPodReplicaStatus(fastpodCopy, filteredPods, manageReplicasErr)
 
-	fastpodCopy.Status.AvailableReplicas = newStatus.AvailableReplicas
-	fastpodCopy.Status.ReadyReplicas = newStatus.ReadyReplicas
-	fastpodCopy.Status.Replicas = newStatus.Replicas
+	klog.Infof("AvailableReplicas: %d, ReadyReplicas: %d, Replicas: %d", newStatus.AvailableReplicas, newStatus.ReadyReplicas, newStatus.Replicas)
 
-	updatedFastpod, err := ctr.fastpodClient.FastgshareV1().FaSTPods(fastpodCopy.Namespace).Update(context.TODO(), fastpodCopy, metav1.UpdateOptions{})
-	if err != nil {
-		return err
+	var updatedFastpod *fastpodv1.FaSTPod
+	if fastpodCopy.Status.AvailableReplicas != *(fastpodCopy.Spec.Replicas) || fastpodCopy.Status.ReadyReplicas != *(fastpodCopy.Spec.Replicas) {
+		fastpodCopy.Status.AvailableReplicas = newStatus.AvailableReplicas
+		fastpodCopy.Status.ReadyReplicas = newStatus.ReadyReplicas
+		fastpodCopy.Status.Replicas = newStatus.Replicas
+		updatedFastpod, err = ctr.fastpodClient.FastgshareV1().FaSTPods(fastpodCopy.Namespace).Update(context.TODO(), fastpodCopy, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
 	}
 
 	if manageReplicasErr != nil && updatedFastpod.Status.ReadyReplicas == *(updatedFastpod.Spec.Replicas) &&
 		updatedFastpod.Status.AvailableReplicas != *(updatedFastpod.Spec.Replicas) {
+		klog.Infof("(enqueue fastpod from replicas check (func: syncHandler)) Re-enqueue the FaSTPod = %s.", updatedFastpod.Name)
 		ctr.enqueueFaSTPod(updatedFastpod)
 	}
 	return manageReplicasErr
@@ -415,7 +421,7 @@ func (ctr *Controller) reconcileReplicas(ctx context.Context, existedPods []*cor
 		// the number of pods to create
 		diff *= -1
 		ctr.expectations.ExpectCreations(fstpKey, diff)
-		klog.V(2).Infof("Not enough replicas for the FaSTPod ... \n need %d replicas, try to create %d replicas", *fastpodCopy.Spec.Replicas, diff)
+		klog.Infof("Not enough replicas for the FaSTPod ... \n need %d replicas, try to create %d replicas", *fastpodCopy.Spec.Replicas, diff)
 		successedNum, err := slowStartbatch(diff, k8scontroller.SlowStartInitialBatchSize, func() (*corev1.Pod, error) {
 			isValidFastpod := false
 			quotaReq := 0.0
@@ -468,7 +474,7 @@ func (ctr *Controller) reconcileReplicas(ctx context.Context, existedPods []*cor
 			if schedNode == "" {
 				return nil, errors.New("NoSchedNodeAvailable")
 			}
-			klog.Infof("The pod of FaSTPod = %s is scheduled to the node = %s with GPUID = %s", key, schedNode, schedvGPUID)
+			klog.Infof("The pod of FaSTPod = %s is scheduled to the node = %s with vGPUID = %s", key, schedNode, schedvGPUID)
 
 			// generate the pod key for the new pod of FaSTPod
 			var subpodName string
@@ -535,6 +541,7 @@ func (ctr *Controller) reconcileReplicas(ctx context.Context, existedPods []*cor
 					}
 					return nil, err
 				}
+				// KONTON_TODO
 				(*fastpod.Status.BoundDeviceIDs)[newpod.Name] = schedvGPUID
 				(*fastpod.Status.GPUClientPort)[newpod.Name] = gpuClientPort
 				return newpod, err
@@ -546,7 +553,7 @@ func (ctr *Controller) reconcileReplicas(ctx context.Context, existedPods []*cor
 
 		// to do
 		if skippedPodsNum := diff - successedNum; skippedPodsNum > 0 {
-			klog.V(2).Infof("The controller does not create enough pod for FaSTPod=%s, created Number:%d, falied number:%d.", key, successedNum, diff-successedNum)
+			klog.Infof("The controller does not create enough pod for FaSTPod=%s, created Number:%d, falied number:%d.", key, successedNum, diff-successedNum)
 			for i := 0; i < skippedPodsNum; i++ {
 
 				//Decrement the expected number of creates because the informer won't observe this pod
@@ -569,7 +576,7 @@ func (ctr *Controller) reconcileReplicas(ctx context.Context, existedPods []*cor
 		var wg sync.WaitGroup
 		wg.Add(diff)
 		for _, pod := range podsToDelete {
-			go func(targetPod *corev1.Pod) {
+			go func(targetPod *corev1.Pod, targetFastPod *fastpodv1.FaSTPod) {
 				podCopy := targetPod.DeepCopy()
 				defer func() {
 					wg.Done()
@@ -579,11 +586,14 @@ func (ctr *Controller) reconcileReplicas(ctx context.Context, existedPods []*cor
 					podKey := k8scontroller.PodKey(targetPod)
 					ctr.expectations.DeletionObserved(key, podKey)
 					if !apierrors.IsNotFound(err) {
-						klog.V(2).Infof("Failed to delete pod=%s of the FaSTPod=%s.", podKey, key)
+						klog.Infof("Failed to delete pod=%s of the FaSTPod=%s.", podKey, key)
 						errCh <- err
 					}
 				}
-			}(pod)
+				// update the status
+				delete((*targetFastPod.Status.BoundDeviceIDs), targetPod.Name)
+				delete((*targetFastPod.Status.GPUClientPort), targetPod.Name)
+			}(pod, fastpod)
 		}
 		wg.Wait()
 		select {
@@ -660,7 +670,13 @@ func (ctr *Controller) enqueueFaSTPod(obj interface{}) {
 }
 
 func (ctr *Controller) handleDeletedFaSTPod(obj interface{}) {
-
+	fastpod, ok := obj.(*fastpodv1.FaSTPod)
+	if !ok {
+		utilruntime.HandleError(fmt.Errorf("handleDeletedFaSTPod: cannot parse object"))
+		return
+	}
+	klog.Infof("Starting to delete pods of fastpod %s/%s", fastpod.Namespace, fastpod.Name)
+	go ctr.removeFaSTPodFromList(fastpod)
 }
 
 func (ctr *Controller) handleObject(obj interface{}) {
@@ -699,6 +715,7 @@ func (ctr *Controller) handleObject(obj interface{}) {
 			return
 		}
 		klog.Infof("The pod=%s of the FaSTPod = %s is to be processed ...", object.GetName(), ownerRef.Name)
+		klog.Info("re-enqueue fastpod from pod update (func: handleObject)")
 		ctr.enqueueFaSTPod(fastpod)
 		return
 	}

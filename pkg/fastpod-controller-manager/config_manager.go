@@ -53,7 +53,7 @@ var (
 	nodesLiveness    map[string]*NodeLiveness
 	nodesLivenessMtx sync.Mutex
 	configNetAddr    string = "0.0.0.0:10086"
-	checkTickerItv   int    = 60
+	checkTickerItv   int    = 240
 	kubeClient       kubernetes.Interface
 )
 
