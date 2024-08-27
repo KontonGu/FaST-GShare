@@ -16,7 +16,10 @@ limitations under the License.
 
 package fastpodcontrollermanager
 
-import fastpodv1 "github.com/KontonGu/FaST-GShare/pkg/apis/fastgshare.caps.in.tum/v1"
+import (
+	fastpodv1 "github.com/KontonGu/FaST-GShare/pkg/apis/fastgshare.caps.in.tum/v1"
+	"k8s.io/klog/v2"
+)
 
 func (ctr *Controller) schedule(fastpod *fastpodv1.FaSTPod, quotaReq float64, quotaLimit float64, smPartition int64, gpuMem int64, isValid bool, key string) (string, string) {
 	// nodeList, err := ctr.nodesLister.List(labels.Set{"gpu": "present"}.AsSelector())
@@ -32,5 +35,13 @@ func (ctr *Controller) schedule(fastpod *fastpodv1.FaSTPod, quotaReq float64, qu
 	for key, _ := range node.vGPUID2GPU {
 		vgpuID = key
 	}
-	return "kgpu1", vgpuID
+
+	if schedNode == "" {
+		klog.Infof("No enough resources for Pod of a FaSTPod=%s/%s", fastpod.ObjectMeta.Namespace, fastpod.ObjectMeta.Name)
+		ctr.pendingListMux.Lock()
+		ctr.pendingList.PushBack(key)
+		ctr.pendingListMux.Unlock()
+		return "", ""
+	}
+	return schedNode, vgpuID
 }

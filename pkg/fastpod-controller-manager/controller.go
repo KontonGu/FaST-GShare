@@ -224,7 +224,13 @@ func (ctr *Controller) Run(stopCh <-chan struct{}, workers int) error {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
-	ctr.gpuNodeInit()
+	if err := ctr.gpuNodeInit(); err != nil {
+		return fmt.Errorf("Error failed to init the gpu nodes: %s", err)
+	}
+
+	pendingInsuranceTicker := time.NewTicker(5 * time.Second)
+	pendingInsuranceDone := make(chan bool)
+	go ctr.pendingInsurance(pendingInsuranceTicker, &pendingInsuranceDone)
 
 	go ctr.startConfigManager(stopCh, ctr.kubeClient)
 	klog.Infof("Starting workers, Numuber of workers = %d.", workers)
@@ -235,8 +241,8 @@ func (ctr *Controller) Run(stopCh <-chan struct{}, workers int) error {
 	klog.Info("Workers Started")
 	<-stopCh
 	klog.Info("Shutting down workers")
-	// pendingInsuranceTicker.Stop()
-	// pendingInsuranceDone <- true
+	pendingInsuranceTicker.Stop()
+	pendingInsuranceDone <- true
 	return nil
 
 }
@@ -720,6 +726,17 @@ func (ctr *Controller) handleObject(obj interface{}) {
 		return
 	}
 
+}
+
+func (ctr *Controller) pendingInsurance(ticker *time.Ticker, done *chan bool) {
+	for {
+		select {
+		case <-(*done):
+			return
+		case <-ticker.C:
+			ctr.resourceChanged(nil)
+		}
+	}
 }
 
 func (ctr *Controller) resourceChanged(obj interface{}) {
