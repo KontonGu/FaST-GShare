@@ -1,0 +1,14 @@
+apiVersion: v1
+description: FaST-GShare - Enabling Efficient Spatio-Temporal GPU Sharing in Serverless Computing for Deep Learning Inference
+home: https://github.com/KontonGu/FaST-GShare
+maintainers:
+  - email: jianfeng.gu@tum.de
+    name: Jianfeng Gu
+name: FaST-GShare
+version: 0.0.2
+sources:
+  - https://github.com/KontonGu/FaST-GShare
+  - https://github.com/KontonGu/FaST-Manager.git
+  - https://github.com/KontonGu/MLPerf-Inference-Benchmark-FaST-GShare
+  - https://github.com/KontonGu/FaST-GShare-AutoScaler.git
+

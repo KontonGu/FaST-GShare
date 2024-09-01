@@ -90,3 +90,21 @@ clean-ctr-fast-configurator-image:
 test_fastconfigurator_fastpodcontrollermanager: clean-ctr-fast-configurator-image build-fast-configurator-container upload-fast-configurator-image \
 clean-ctr-fastpod-controller-manager-image build-fastpod-controller-manager-container upload-fastpod-controller-manager-image
 
+
+
+# --------------------------------------- openfaas fast-gshare dockerfile build ---------------------------------------------------
+FAST_GSHARE_IMAGE_NAME=fast-gshare-faas
+FAST_GSHARE_IMAGE_TAG=test
+.PHONY: build-fast-gshare-faas-image
+build-fast-gshare-faas-image:
+	@echo "Building module [fast-gshare-faas] ..."
+	docker build -t ${DOCKER_USER}/${FAST_GSHARE_IMAGE_NAME}:${FAST_GSHARE_IMAGE_TAG} -f Dockerfile .
+
+.PHONY: upload-fast-gshare-faas-image
+upload-fast-gshare-faas-image:
+	docker push ${DOCKER_USER}/${FAST_GSHARE_IMAGE_NAME}:${FAST_GSHARE_IMAGE_TAG}
+
+.PHONY: clean-fast-gshare-faas-image
+clean-fast-gshare-faas-image:
+	sudo ctr -n k8s.io i rm ${DOCKER_USER}/${FAST_GSHARE_IMAGE_NAME}:${FAST_GSHARE_IMAGE_TAG}
+

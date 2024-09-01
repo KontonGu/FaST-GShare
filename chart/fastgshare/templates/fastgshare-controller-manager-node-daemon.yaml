@@ -1,0 +1,160 @@
+{{- if .Values.createCRDs }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fastpod-controller-manager
+  namespace: kube-system
+
+---
+
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: fastpod-controller-manager-role
+rules:
+- apiGroups: [""]
+  resources: ["*"]
+  verbs: ["*"]
+- apiGroups: ["fastgshare.caps.in.tum"]
+  resources: ["*"]
+  verbs: ["*"]
+- apiGroups: ["fastgshare.caps.in.tum"]
+  resources: ["fastpods"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: [""]
+  resources: ["pods", "pods/log", "namespaces", "endpoints"]
+  verbs: ["get", "list", "watch"]
+
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: fastpod-controller-manager-role-binder
+subjects:
+- kind: ServiceAccount
+  name: fastpod-controller-manager
+  namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: fastpod-controller-manager-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: fastpod-controller-manager-svc
+  namespace: kube-system
+spec:
+  type: ClusterIP
+  selector:
+    app: fastpod-controller-manager
+  ports:
+  - protocol: TCP
+    port: 10086
+    targetPort: 10086
+
+---
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: fastpod-controller-manager
+  namespace: kube-system
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/path: "/metrics"
+    prometheus.io/port: "9090"
+  labels:
+    app: fastpod-controller-manager
+spec:
+  serviceAccountName: fastpod-controller-manager
+  priorityClassName: system-node-critical
+  tolerations:
+  - key: "CriticalAddonsOnly"
+    operator: "Exists"
+  - key: "node-role.kubernetes.io/master"
+    operator: "Exists"
+    effect: "NoSchedule"
+  - key: "node-role.kubernetes.io/control-plane"
+    operator: "Exists"
+    effect: "NoSchedule"
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: "node-role.kubernetes.io/master"
+            operator: "Exists"
+  restartPolicy: Always
+  containers:
+  - name: fastpod-controller-manager-container
+    #image: kontonpuku666/fastpod-controller-manager:controller_test
+    image: {{ .Values.fastpodControllerManager.image }}
+    imagePullPolicy: IfNotPresent
+    volumeMounts:
+    - name: kube-config
+      mountPath: /root/.kube/config
+      subPath: config
+  volumes:
+    - name: kube-config
+      configMap:
+        name: kube-config
+
+---
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fastgshare-node-daemon
+  namespace: kube-system
+  labels:
+    fastgshare: configurator-scheduler-node-daemon
+spec:
+  selector:
+    matchLabels:
+        fastgsahre: configurator-scheduler-node-daemon
+  template:
+    metadata:
+      labels:
+        fastgsahre: configurator-scheduler-node-daemon
+    spec:
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 0
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      containers:
+      - name: fast-configurator-ctn
+        # image: kontonpuku666/fast-configurator:release
+        image: {{ .Values.fastgshareNodeDaemon.fastConfigurator.image }}
+        volumeMounts:
+        - name: fastpod-library
+          mountPath: "/fastpod/library"
+        - name: fastpod-scheduler
+          mountPath: "/fastpod/scheduler"
+        env:
+        - name: "FaSTPod_GPUClientsIP"
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+      - name: fastpod-fastscheduler-ctn
+        # image: kontonpuku666/fastpod-fastscheduler:release
+        image: {{ .Values.fastgshareNodeDaemon.fastpodFastscheduler.image }}
+        volumeMounts:
+        - name: fastpod-library
+          mountPath: "/fastpod/library"
+        - name: fastpod-scheduler
+          mountPath: "/fastpod/scheduler"
+      volumes:
+      - name: fastpod-library
+        hostPath:
+          path: "/fastpod/library"
+      - name: fastpod-scheduler
+        hostPath:
+          path: "/fastpod/scheduler"
+      
+{{- end }}

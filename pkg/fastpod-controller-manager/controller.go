@@ -767,6 +767,8 @@ func (ctr *Controller) newPod(fastpod *fastpodv1.FaSTPod, isWarm bool, schedIP s
 		annotationCopy[FastGShareWarm] = "false"
 	}
 
+	// smPartition := fastpod.ObjectMeta.Annotations[fastpodv1.FaSTGShareGPUQuotaLimit]
+
 	for i := range specCopy.Containers {
 		ctn := &specCopy.Containers[i]
 		ctn.Env = append(ctn.Env,
@@ -778,6 +780,10 @@ func (ctr *Controller) newPod(fastpod *fastpodv1.FaSTPod, isWarm bool, schedIP s
 				Name:  "NVIDIA_DRIVER_CAPABILITIES",
 				Value: "compute,utility",
 			},
+			// corev1.EnvVar{
+			// 	Name:  "CUDA_MPS_ACTIVE_THREAD_PERCENTAGE",
+			// 	Value: smPartition,
+			// },
 			corev1.EnvVar{
 				Name:  "LD_PRELOAD",
 				Value: FaSTPodLibraryDir + "/libfast.so.1",

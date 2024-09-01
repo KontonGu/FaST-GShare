@@ -1,0 +1,39 @@
+functionNamespace: fast-gshare-fn  # Default namespace for functions
+
+# Contact us via https://www.openfaas.com/support to purchase a license
+openfaasPro: false
+
+httpProbe: true               # Setting to true will use HTTP for readiness and liveness probe on the OpenFaaS core components
+clusterRole: false        # Set to true for multiple namespaces, pro scaler and CPU/RAM metrics in OpenFaaS REST API
+createCRDs: true              # Set to false if applying CRDs in another way
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+fastpodControllerManager:
+  image: kontonpuku666/fastpod-controller-manager:controller_test
+fastgshareNodeDaemon:
+  fastpodFastscheduler:
+    image: kontonpuku666/fastpod-fastscheduler:release
+  fastConfigurator:
+    image: kontonpuku666/fast-configurator:release
+  

@@ -3,8 +3,8 @@ kind: FaSTPod
 metadata:
   name: test-fastpod
   annotations: 
-    fastgshare/gpu_quota_request: "0.3"
-    fastgshare/gpu_quota_limit: "0.4"
+    fastgshare/gpu_quota_request: "0.7"
+    fastgshare/gpu_quota_limit: "0.8"
     fastgshare/gpu_sm_partition: "30"
     fastgshare/gpu_mem: "2700000000"
 spec:
@@ -13,9 +13,15 @@ spec:
     containers:
     - name: resnet-pytorch
       image: docker.io/kontonpuku666/mlperf-resnet:pytorch
+      env:
+        - name: CUDA_MPS_ACTIVE_THREAD_PERCENTAGE
+          value: "60"
+      ports:
+      - containerPort: 5000
+        hostPort: 5000
       volumeMounts:
-          - name: "model-volume"
-            mountPath: "/models/"
+        - name: "model-volume"
+          mountPath: "/models/"
     volumes:
         - name: "model-volume"
           hostPath:

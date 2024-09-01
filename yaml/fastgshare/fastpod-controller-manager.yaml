@@ -92,7 +92,7 @@ spec:
   restartPolicy: Always
   containers:
   - name: fastpod-controller-manager-container
-    image: kontonpuku666/fastpod-controller-manager:release
+    image: kontonpuku666/fastpod-controller-manager:controller_test
     imagePullPolicy: IfNotPresent
     volumeMounts:
     - name: kube-config
