@@ -8,7 +8,7 @@ metadata:
     fastgshare/gpu_sm_partition: "30"
     fastgshare/gpu_mem: "2700000000"
 spec:
-  replicas: 1
+  replicas: 2
   podSpec:
     containers:
     - name: resnet-pytorch

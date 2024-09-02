@@ -8,17 +8,17 @@ metadata:
     fastgshare/gpu_sm_partition: "30"
     fastgshare/gpu_mem: "2700000000"
 spec:
-  replicas: 1
+  replicas: 2
   podSpec:
     containers:
     - name: resnet-pytorch
       image: docker.io/kontonpuku666/mlperf-resnet:pytorch
-      env:
-        - name: CUDA_MPS_ACTIVE_THREAD_PERCENTAGE
-          value: "60"
-      ports:
-      - containerPort: 5000
-        hostPort: 5000
+      # env:
+      #   - name: CUDA_MPS_ACTIVE_THREAD_PERCENTAGE
+      #     value: "60"
+      # ports:
+      # - containerPort: 5000
+      #   hostPort: 5000
       volumeMounts:
         - name: "model-volume"
           mountPath: "/models/"

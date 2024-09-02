@@ -427,7 +427,7 @@ func (ctr *Controller) reconcileReplicas(ctx context.Context, existedPods []*cor
 		// the number of pods to create
 		diff *= -1
 		ctr.expectations.ExpectCreations(fstpKey, diff)
-		klog.Infof("Not enough replicas for the FaSTPod ... \n need %d replicas, try to create %d replicas", *fastpodCopy.Spec.Replicas, diff)
+		klog.Infof("Not enough replicas for the FaSTPod ..., spec need %d replicas, try to create %d replicas", *fastpodCopy.Spec.Replicas, diff)
 		successedNum, err := slowStartbatch(diff, k8scontroller.SlowStartInitialBatchSize, func() (*corev1.Pod, error) {
 			isValidFastpod := false
 			quotaReq := 0.0
@@ -455,7 +455,7 @@ func (ctr *Controller) reconcileReplicas(ctx context.Context, existedPods []*cor
 				tmpQRStr := fastpod.ObjectMeta.Annotations[fastpodv1.FaSTGShareGPUQuotaRequest]
 				quotaReq, err = strconv.ParseFloat(tmpQRStr, 64)
 				if err != nil || quotaReq > 1.0 || quotaReq < 0.0 {
-					utilruntime.HandleError(fmt.Errorf("Error The FaSTPod = %s/%s has invalid quota request value %s.", objNamesapce, objName, quotaReq))
+					utilruntime.HandleError(fmt.Errorf("Error The FaSTPod = %s/%s has invalid quota request value %f.", objNamesapce, objName, quotaReq))
 					return nil, err
 				}
 
@@ -469,7 +469,7 @@ func (ctr *Controller) reconcileReplicas(ctx context.Context, existedPods []*cor
 				tmpMemStr := fastpod.ObjectMeta.Annotations[fastpodv1.FaSTGShareGPUMemory]
 				gpuMem, err = strconv.ParseInt(tmpMemStr, 10, 64)
 				if err != nil || gpuMem < 0 {
-					utilruntime.HandleError(fmt.Errorf("Error The FaSTPod = %s/%s has invalid memory value %s.", objNamesapce, objName, gpuMem))
+					utilruntime.HandleError(fmt.Errorf("Error The FaSTPod = %s/%s has invalid memory value %d.", objNamesapce, objName, gpuMem))
 				}
 				isValidFastpod = true
 			}
@@ -497,7 +497,7 @@ func (ctr *Controller) reconcileReplicas(ctx context.Context, existedPods []*cor
 
 				// get the gpu device uuid and update the pod resource configuration in configurator
 				gpuDevUUID, errCode = ctr.getGPUDevUUIDAndUpdateConfig(schedNode, schedvGPUID, quotaReq, quotaLimit, smPartition, gpuMem, subpodKey, &gpuClientPort)
-				klog.Infof("The pod = %s of FaSTPod %s with vGPUID = %s is bound to device UUID=%s with GPUClientPort=%s.", subpodKey, key, schedvGPUID, gpuDevUUID, gpuClientPort)
+				klog.Infof("The pod = %s of FaSTPod %s with vGPUID = %s is bound to device UUID=%s with GPUClientPort=%d.", subpodKey, key, schedvGPUID, gpuDevUUID, gpuClientPort)
 
 				// errCode 0: no error
 				// errCode 1: node with nodeName is not initialized
@@ -538,7 +538,7 @@ func (ctr *Controller) reconcileReplicas(ctx context.Context, existedPods []*cor
 
 			// Create the new pod for the fastpod
 			if node, ok := nodesInfo[schedNode]; ok {
-				klog.Infof("Starting to create a new pod=%s of the fastpod=%s", subpodName, key)
+				klog.Infof("Starting to create a new pod=%s for the fastpod=%s", subpodName, key)
 				newpod, err := ctr.kubeClient.CoreV1().Pods(fastpodCopy.Namespace).Create(context.TODO(), ctr.newPod(fastpod, false, node.DaemonIP, gpuClientPort, gpuDevUUID, schedNode, schedvGPUID, subpodName), metav1.CreateOptions{})
 				if err != nil {
 					klog.Errorf("Error when creating pod=%s for the FaSTPod=%s/%s.", subpodName, fastpod.Namespace, fastpod.Name)
@@ -550,6 +550,7 @@ func (ctr *Controller) reconcileReplicas(ctx context.Context, existedPods []*cor
 				// KONTON_TODO
 				(*fastpod.Status.BoundDeviceIDs)[newpod.Name] = schedvGPUID
 				(*fastpod.Status.GPUClientPort)[newpod.Name] = gpuClientPort
+				klog.Infof("Finished creating pod = %s.", subpodName)
 				return newpod, err
 			}
 

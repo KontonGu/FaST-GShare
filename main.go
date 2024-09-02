@@ -163,7 +163,7 @@ func runOperator(setup serverSetup, cfg config.BootstrapConfig) {
 		rateScale = cfg.FunctionRate
 	}
 
-	klog.Infof("rate scale: %i", rateScale)
+	klog.Infof("rate scale: %t", rateScale)
 
 	fastpodLookup.RateRep = rateScale
 

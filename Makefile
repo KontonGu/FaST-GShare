@@ -92,7 +92,7 @@ clean-ctr-fastpod-controller-manager-image build-fastpod-controller-manager-cont
 
 
 
-# --------------------------------------- openfaas fast-gshare dockerfile build ---------------------------------------------------
+## --------------------------------------- openfaas fast-gshare dockerfile build ---------------------------------------------------
 FAST_GSHARE_IMAGE_NAME=fast-gshare-faas
 FAST_GSHARE_IMAGE_TAG=test
 .PHONY: build-fast-gshare-faas-image
@@ -108,3 +108,15 @@ upload-fast-gshare-faas-image:
 clean-fast-gshare-faas-image:
 	sudo ctr -n k8s.io i rm ${DOCKER_USER}/${FAST_GSHARE_IMAGE_NAME}:${FAST_GSHARE_IMAGE_TAG}
 
+
+
+
+##------------------------------------ helm install the fast-gshare-fn system -------------------------------- ##
+.PHONY: helm_install_fast-gshare-fn
+helm_install_fast-gshare-fn:
+	helm install fast-gshare ./chart/fastgshare --namespace fast-gshare --set functionNamespace=fast-gshare-fn  \
+	--set  fastpodControllerManager.image="docker.io/kontonpuku666/fastpod-controller-manager:controller_test"
+
+.PHONY: helm_uninstall_fast-gshare-fn
+helm_uninstall_fast-gshare-fn:
+	helm uninstall fast-gshare --namespace fast-gshare

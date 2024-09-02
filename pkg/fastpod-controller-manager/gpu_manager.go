@@ -399,7 +399,7 @@ func (ctr *Controller) getGPUDevUUIDAndUpdateConfig(nodeName, vGPUID string, quo
 		}
 
 		if tmpMem := gpuInfo.UsageMem + gpuMem; tmpMem > gpuInfo.Mem {
-			klog.Infof("Resource exceed! The gpu = %s with vgpu = %s can not allocate enough memory to pod %s, MemUsed=%d, MemReq=%d.", gpuInfo.UUID, vGPUID, key, gpuInfo.UsageMem, gpuMem)
+			klog.Infof("Resource exceed! The gpu = %s with vgpu = %s can not allocate enough memory to pod %s, MemUsed=%d, MemReq=%d, MemTotal=%d.", gpuInfo.UUID, vGPUID, key, gpuInfo.UsageMem, gpuMem, gpuInfo.Mem)
 			return "", 4
 		} else {
 			gpuInfo.UsageMem = tmpMem
