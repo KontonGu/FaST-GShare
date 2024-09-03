@@ -2,18 +2,28 @@ apiVersion: fastgshare.caps.in.tum/v1
 kind: FaSTPod
 metadata:
   name: test-fastpod
-  namespace: fast-gshare
+  namespace: fast-gshare-fn
+  labels:
+    com.openfaas.scale.min: "1"
+    com.openfaas.scale.max: "3"
   annotations: 
-    fastgshare/gpu_quota_request: "0.7"
-    fastgshare/gpu_quota_limit: "0.8"
+    fastgshare/gpu_quota_request: "0.8"
+    fastgshare/gpu_quota_limit: "0.9"
     fastgshare/gpu_sm_partition: "30"
     fastgshare/gpu_mem: "2700000000"
 spec:
-  replicas: 2
+  replicas: 3
   podSpec:
     containers:
     - name: resnet-pytorch
       image: docker.io/kontonpuku666/mlperf-resnet:pytorch
+      ports:
+        - containerPort: 8080
+      readinessProbe:
+        tcpSocket:
+          port: 5000
+        initialDelaySeconds: 5
+        periodSeconds: 10
       # env:
       #   - name: CUDA_MPS_ACTIVE_THREAD_PERCENTAGE
       #     value: "60"

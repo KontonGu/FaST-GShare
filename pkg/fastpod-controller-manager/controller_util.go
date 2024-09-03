@@ -352,7 +352,7 @@ func FindInQueue(key string, pl *list.List) (*PodReq, bool) {
 
 func makeLabels(fastpod *fastpodv1.FaSTPod) map[string]string {
 	labels := map[string]string{
-		"faas_function": fastpod.Name,
+		"fast_function": fastpod.Name,
 		"app":           fastpod.Name,
 		"controller":    fastpod.Name,
 	}

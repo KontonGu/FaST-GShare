@@ -46,7 +46,8 @@ build-fastpod-controller-manager-container:
 test-build-fastpod-controller-manager-container:
 	docker build -t ${DOCKER_USER}/fastpod-controller-manager:controller_test -f docker/fastpod-controller-manager/Dockerfile .
 	docker push ${DOCKER_USER}/fastpod-controller-manager:controller_test 
-	sudo ctr -n k8s.io i rm ${DOCKER_USER}/fastpod-controller-manager:controller_test
+	# sudo ctr -n k8s.io i rm ${DOCKER_USER}/fastpod-controller-manager:controller_test
+	sudo ctr -n k8s.io i ls | grep ${DOCKER_USER}/fastpod-controller-manager | awk '{print $$1}' | xargs -I {} sudo ctr -n k8s.io i rm {}
 
 .PHONY: upload-fastpod-controller-manager-image
 upload-fastpod-controller-manager-image:
@@ -93,7 +94,7 @@ clean-ctr-fastpod-controller-manager-image build-fastpod-controller-manager-cont
 
 
 ## --------------------------------------- openfaas fast-gshare dockerfile build ---------------------------------------------------
-FAST_GSHARE_IMAGE_NAME=fast-gshare-faas
+FAST_GSHARE_IMAGE_NAME := fast-gshare-faas
 FAST_GSHARE_IMAGE_TAG=test
 .PHONY: build-fast-gshare-faas-image
 build-fast-gshare-faas-image:
@@ -106,7 +107,11 @@ upload-fast-gshare-faas-image:
 
 .PHONY: clean-fast-gshare-faas-image
 clean-fast-gshare-faas-image:
-	sudo ctr -n k8s.io i rm ${DOCKER_USER}/${FAST_GSHARE_IMAGE_NAME}:${FAST_GSHARE_IMAGE_TAG}
+	sudo ctr -n k8s.io i ls | grep -i ${FAST_GSHARE_IMAGE_NAME} | awk '{print $$1}' | xargs -I {} sudo ctr -n k8s.io i rm {} 
+
+.PHONY: test-fast-gshare-faas-image
+test-fast-gshare-faas-image: clean-fast-gshare-faas-image build-fast-gshare-faas-image upload-fast-gshare-faas-image
+	
 
 
 
@@ -120,3 +125,4 @@ helm_install_fast-gshare-fn:
 .PHONY: helm_uninstall_fast-gshare-fn
 helm_uninstall_fast-gshare-fn:
 	helm uninstall fast-gshare --namespace fast-gshare
+	kubectl delete pod -l fastgshare/role=dummyPod -n kube-system

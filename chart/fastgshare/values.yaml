@@ -182,7 +182,7 @@ prometheus:
 
 alertmanager:
   image: prom/alertmanager:v0.24.0
-  create: true
+  create: false
   resources:
     requests:
       memory: "25Mi"

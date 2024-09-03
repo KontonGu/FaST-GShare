@@ -166,6 +166,7 @@ func makeReplicaHandler(defaultNamespace string, client clientset.Interface, fun
 		klog.Infof("Current replica is %d", *replica)
 
 		fstpCopy.Spec.Replicas = int32p(int32(req.Replicas))
+		klog.Infof("Replicas from request = %d.", req.Replicas)
 		updatedFstp, err := client.FastgshareV1().FaSTPods(lookupNamespace).Update(r.Context(), fstpCopy, metav1.UpdateOptions{})
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
