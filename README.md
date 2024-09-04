@@ -22,7 +22,7 @@ A simple FaSTPod deployment example is available in `yaml/fastpod/testfastpod.ya
 
 ## Deployment
 
-### Infrastrction Install
+### Infrastruction Install
 
 ### Install FaST-GShare FaSTPod 
 1. Deploy FaSTPod CRD (Custom Resource Definition)
@@ -47,38 +47,19 @@ A simple FaSTPod deployment example is available in `yaml/fastpod/testfastpod.ya
 The deployment of the FaST-GShare-Function in this project does not include the FaST-GShare-Autoscaler and only deploys with a fixed number of replicas. The complete FaST-GShare serverless version is available at [FaST-GShare-Function](https://github.com/KontonGu/FaST-GShare-Function), and the basic verion of Autoscaler plugin can be found at [FaST-GShare-Autoscaler](https://github.com/KontonGu/FaST-GShare-Autoscaler.git).
 - Install the FaST-GShare-Function Components
     ```
-    $ bash ./install/fast-gshare-fn-deploy.sh
+    $ bash ./install/install_fast-gshare-fn.sh
     ```
-
+    Test if the FaST-GShare-Function is successfully deployed:
+    ```
+    $ kubectl apply -f yaml/fastpod/test-fastgshare-fn.yaml
+    ```
 - Uninstall the FaST-GShare-Function Components
     ```
-    $ make helm_uninstall_fast-gshare-fn
+    $ bash ./install/uninstall_fast-gshare-fn.sh
     ```
 
 ## Build FaST-GShare from Scrach based on the Code (for further Developing)
-1. Get Go dependencies
-    ```
-    $ mkdir github.com/KontonGu && cd github.com/KontonGu
-    $ git clone git@github.com:KontonGu/FaST-GShare.git
-    $ cd FaST-GShare
-    [optional]
-    $ go mod init github.com/KontonGu/FaST-GShare
-    $ go mod tidy
-    ```
-2. Generate FaSTPod Custom Resource Definition (CRD) Client
-    Clean original generated FaSTPod CRD client
-    ```
-    $ make clean_crd_gen
-    ```
-    Generate new CRD client:
-    ```
-    $ make code_gen_crd
-    ```
-    Update CRD client:
-    ```
-    $ make update_crd
-    ```
-
+The detailed introduction to the FaST-GShare project's construction from the source code can be found in the `./develope` directory.
 
 
 ## Citation

@@ -1,5 +1,6 @@
-#!/bin/bash
-current_path=$(dirname "$0")
+##!/bin/bash
+current_dir=$(dirname "$0")
+project_dir=$(dirname "$current_dir")
 
 # check if the node has at least one NVIDIA GPU
 if nvidia-smi &> /dev/null; then
@@ -23,7 +24,15 @@ if [ ! -e /models ]; then
     sudo mkdir /models
 fi
 
+## clear fastpod deployemnt configuration and use helm to intall fast-gshare-fn
+existed_fastpods=$(kubectl get pods -n fast-gshare --no-headers)
+if [ -n "$existed_fastpods" ]; then
+    bash ${project_dir}/yaml/fastgshare/clean_deploy_ctr_mgr_node_daemon.sh
+fi
 
-kubectl apply -f ${current_path}/fastpod-controller-manager.yaml
-sleep 10
-kubectl apply -f ${current_path}/fastgshare-node-daemon.yaml
+## install FaST-GShare-Function
+kubectl apply -f ${project_dir}/namespace.yaml
+kubectl create configmap kube-config -n kube-system --from-file=$HOME/.kube/config 
+make helm_install_fast-gshare-fn
+
+
