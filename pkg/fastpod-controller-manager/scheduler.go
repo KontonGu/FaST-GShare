@@ -17,26 +17,25 @@ limitations under the License.
 package fastpodcontrollermanager
 
 import (
-	"os"
+	"fmt"
 
 	fastpodv1 "github.com/KontonGu/FaST-GShare/pkg/apis/fastgshare.caps.in.tum/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/klog/v2"
 )
 
 func (ctr *Controller) schedule(fastpod *fastpodv1.FaSTPod, quotaReq float64, quotaLimit float64, smPartition int64, gpuMem int64, isValid bool, key string) (string, string) {
-	// nodeList, err := ctr.nodesLister.List(labels.Set{"gpu": "present"}.AsSelector())
-	// if err != nil {
-	// 	errInfo := fmt.Errorf("Error Cannot find gpu node with the lable \"gpu:present\"")
-	// 	utilruntime.HandleError(errInfo)
-	// }
-	// schedNode := "kgpu1"
-	//curently tmmporary use
-	hostname, err := os.Hostname()
+	nodeList, err := ctr.nodesLister.List(labels.Set{"gpu": "present"}.AsSelector())
 	if err != nil {
-		klog.Errorf("Error: %v", err)
-		return "", ""
+		errInfo := fmt.Errorf("Error Cannot find gpu node with the lable \"gpu:present\"")
+		utilruntime.HandleError(errInfo)
 	}
-	schedNode := hostname
+	// schedNode := "kgpu1"
+	schedNode := nodeList[0].Name
+	klog.Infof("current node name: %s.", schedNode)
+	//curently tmmporary use
+
 	nodesInfoMtx.Lock()
 	defer nodesInfoMtx.Unlock()
 	node := nodesInfo[schedNode]

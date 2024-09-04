@@ -43,6 +43,10 @@ A simple FaSTPod deployment example is available in `yaml/fastpod/testfastpod.ya
     $ kubectl get pods -n fast-gshare
     $ kubectl get fastpods -n fast-gshare
     ```
+4. Uninstall the FaST-GShare FaSTPod deployment
+    ```
+    $ bash ./yaml/fastgshare/clean_deploy_ctr_mgr_node_daemon.sh
+    ```
 ---
 ### Install and Uninstall FaST-GShare-Function (without Autoscaler)
 The deployment of the FaST-GShare-Function in this project does not include the FaST-GShare-Autoscaler and only deploys with a fixed number of replicas. The complete FaST-GShare serverless version is available at [FaST-GShare-Function](https://github.com/KontonGu/FaST-GShare-Function), and the basic verion of Autoscaler plugin can be found at [FaST-GShare-Autoscaler](https://github.com/KontonGu/FaST-GShare-Autoscaler.git).

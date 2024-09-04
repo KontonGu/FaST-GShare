@@ -55,7 +55,7 @@ upload-fastpod-controller-manager-image:
 
 .PHONY: clean-ctr-fastpod-controller-manager-image
 clean-ctr-fastpod-controller-manager-image:
-	sudo ctr -n k8s.io i rm ${DOCKER_USER}/fastpod-controller-manager:release
+	sudo ctr -n k8s.io i ls | grep ${DOCKER_USER}/fastpod-controller-manager | awk '{print $$1}' | xargs -I {} sudo ctr -n k8s.io i rm {}
 
 
 ### ------------------------  fast-configurator ------------------------- ###
