@@ -3,7 +3,7 @@
 ## Introduction
 
 ### FaSTPod 
-FaSTPod is a Custom Resource that enables temporal and spacial GPU sharing. Users can specify GPU resources for each Pod in the FaSTPod's YAML specification annotations, such as:
+FaSTPod is a Custom Resource that enables temporal and spacial GPU sharing. Users can specify fine-grained GPU resources for each Pod in the FaSTPod's YAML specification annotations, such as:
 ```
 annotations: 
   fastgshare/gpu_quota_request: "0.7"
@@ -55,7 +55,7 @@ The deployment of the FaST-GShare-Function in this project does not include the 
     $ make helm_uninstall_fast-gshare-fn
     ```
 
-## Build FaST-GShare from Scrach based on the Code
+## Build FaST-GShare from Scrach based on the Code (for further Developing)
 1. Get Go dependencies
     ```
     $ mkdir github.com/KontonGu && cd github.com/KontonGu
