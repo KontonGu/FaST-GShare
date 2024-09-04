@@ -44,10 +44,10 @@ build-fastpod-controller-manager-container:
 
 .PHONY: test-build-fastpod-controller-manager-container
 test-build-fastpod-controller-manager-container:
+	sudo ctr -n k8s.io i ls | grep ${DOCKER_USER}/fastpod-controller-manager | awk '{print $$1}' | xargs -I {} sudo ctr -n k8s.io i rm {}
 	docker build -t ${DOCKER_USER}/fastpod-controller-manager:controller_test -f docker/fastpod-controller-manager/Dockerfile .
 	docker push ${DOCKER_USER}/fastpod-controller-manager:controller_test 
-	# sudo ctr -n k8s.io i rm ${DOCKER_USER}/fastpod-controller-manager:controller_test
-	sudo ctr -n k8s.io i ls | grep ${DOCKER_USER}/fastpod-controller-manager | awk '{print $$1}' | xargs -I {} sudo ctr -n k8s.io i rm {}
+	
 
 .PHONY: upload-fastpod-controller-manager-image
 upload-fastpod-controller-manager-image:

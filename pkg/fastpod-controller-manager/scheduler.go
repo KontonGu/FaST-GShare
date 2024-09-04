@@ -17,7 +17,8 @@ limitations under the License.
 package fastpodcontrollermanager
 
 import (
-	os
+	"os"
+
 	fastpodv1 "github.com/KontonGu/FaST-GShare/pkg/apis/fastgshare.caps.in.tum/v1"
 	"k8s.io/klog/v2"
 )
@@ -31,10 +32,10 @@ func (ctr *Controller) schedule(fastpod *fastpodv1.FaSTPod, quotaReq float64, qu
 	// schedNode := "kgpu1"
 	//curently tmmporary use
 	hostname, err := os.Hostname()
-    if err != nil {
-        klog.Errorf("Error: %v", err)
-		return "",""
-    }
+	if err != nil {
+		klog.Errorf("Error: %v", err)
+		return "", ""
+	}
 	schedNode := hostname
 	nodesInfoMtx.Lock()
 	defer nodesInfoMtx.Unlock()

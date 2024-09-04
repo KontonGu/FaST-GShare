@@ -1,6 +1,7 @@
-# FaST-GShare: Enabling Efficient Spatio-Temporal GPU Sharing in Serverless Computing for Deep Learning Inference
+# FaST-GShare
 
 ## Introduction
+FaST-GShare: Enabling Efficient Spatio-Temporal GPU Sharing in Serverless Computing for Deep Learning Inference
 
 ### FaSTPod 
 FaSTPod is a Custom Resource that enables temporal and spacial GPU sharing. Users can specify fine-grained GPU resources for each Pod in the FaSTPod's YAML specification annotations, such as:
