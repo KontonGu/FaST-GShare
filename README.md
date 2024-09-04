@@ -22,9 +22,9 @@ A simple FaSTPod deployment example is available in `yaml/fastpod/testfastpod.ya
 
 ## Deployment
 
-### Infrastructure Install
+### Infrastrction Install
 
-### Deploy FaST-GShare FaSTPod 
+### Install FaST-GShare FaSTPod 
 1. Deploy FaSTPod CRD (Custom Resource Definition)
     ```
     $ kubectl apply -f ./yaml/crds/fastpod_crd.yaml
@@ -43,14 +43,14 @@ A simple FaSTPod deployment example is available in `yaml/fastpod/testfastpod.ya
     $ kubectl get fastpods -n fast-gshare
     ```
 ---
-### Deploy FaST-GShare-Function (without Autoscaler)
+### Install and Uninstall FaST-GShare-Function (without Autoscaler)
 The deployment of the FaST-GShare-Function in this project does not include the FaST-GShare-Autoscaler and only deploys with a fixed number of replicas. The complete FaST-GShare serverless version is available at [FaST-GShare-Function](https://github.com/KontonGu/FaST-GShare-Function), and the basic verion of Autoscaler plugin can be found at [FaST-GShare-Autoscaler](https://github.com/KontonGu/FaST-GShare-Autoscaler.git).
-1. Install the FaST-GShare-Function Components
+- Install the FaST-GShare-Function Components
     ```
     $ bash ./install/fast-gshare-fn-deploy.sh
     ```
 
-2. Uninstall the FaST-GShare-Function Components
+- Uninstall the FaST-GShare-Function Components
     ```
     $ make helm_uninstall_fast-gshare-fn
     ```
