@@ -24,15 +24,20 @@ if [ ! -e /models ]; then
     sudo mkdir /models
 fi
 
-## clear fastpod deployemnt configuration and use helm to intall fast-gshare-fn
+## clear fastpod existed deployemnt configuration and use helm to intall fast-gshare-fn 
+## which already includes fastpod deployment
 existed_fastpods=$(kubectl get pods -n fast-gshare --no-headers)
 if [ -n "$existed_fastpods" ]; then
     bash ${project_dir}/yaml/fastgshare/clean_deploy_ctr_mgr_node_daemon.sh
 fi
 
+echo "creating mps daemon ....."
+kubectl apply -f ${current_dir}/mps_daemon.yaml
+
 ## install FaST-GShare-Function
 kubectl apply -f ${project_dir}/namespace.yaml
 kubectl create configmap kube-config -n kube-system --from-file=$HOME/.kube/config 
-make helm_install_fast-gshare-fn
+helm install fast-gshare ./chart/fastgshare --namespace fast-gshare --set functionNamespace=fast-gshare-fn  \
+	--set  fastpodControllerManager.image="docker.io/kontonpuku666/fastpod-controller-manager:mps_test"
 
 

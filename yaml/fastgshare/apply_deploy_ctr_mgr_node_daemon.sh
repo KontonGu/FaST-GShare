@@ -23,7 +23,8 @@ if [ ! -e /models ]; then
     sudo mkdir /models
 fi
 
-
+kubectl apply -f ${current_path}/mps_daemon.yaml
+sleep 3
 kubectl apply -f ${current_path}/fastpod-controller-manager.yaml
-sleep 10
+sleep 5
 kubectl apply -f ${current_path}/fastgshare-node-daemon.yaml
