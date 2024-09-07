@@ -36,7 +36,14 @@ kubectl apply -f ${current_dir}/mps_daemon.yaml
 
 ## install FaST-GShare-Function
 kubectl apply -f ${project_dir}/namespace.yaml
-kubectl create configmap kube-config -n kube-system --from-file=$HOME/.kube/config 
+
+## deploy the kube-config configmap if not existed
+existed_config=$(kubectl get configmap kube-config -n kube-system --no-headers)
+if [ -z "${existed_config}" ]; then
+    echo "creating kube config configmap ..."
+    kubectl create configmap kube-config -n kube-system --from-file=$HOME/.kube/config
+fi
+ 
 helm install fast-gshare ./chart/fastgshare --namespace fast-gshare --set functionNamespace=fast-gshare-fn  \
 	--set  fastpodControllerManager.image="docker.io/kontonpuku666/fastpod-controller-manager:mps_test"
 

@@ -7,8 +7,8 @@ metadata:
     com.openfaas.scale.min: "1"
     com.openfaas.scale.max: "3"
   annotations: 
-    fastgshare/gpu_quota_request: "0.8"
-    fastgshare/gpu_quota_limit: "0.9"
+    fastgshare/gpu_quota_request: "0.5"
+    fastgshare/gpu_quota_limit: "0.6"
     fastgshare/gpu_sm_partition: "30"
     fastgshare/gpu_mem: "2700000000"
 spec:
@@ -33,6 +33,8 @@ spec:
       volumeMounts:
         - name: "model-volume"
           mountPath: "/models/"
+      # command: ["/bin/bash", "-c"]
+      # args: ["sleep 7200"]
     volumes:
         - name: "model-volume"
           hostPath:
