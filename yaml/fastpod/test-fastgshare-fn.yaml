@@ -9,7 +9,7 @@ metadata:
   annotations: 
     fastgshare/gpu_quota_request: "1.0"
     fastgshare/gpu_quota_limit: "1.0"
-    fastgshare/gpu_sm_partition: "30"
+    fastgshare/gpu_sm_partition: "20"
     fastgshare/gpu_mem: "2700000000"
 spec:
   replicas: 1
