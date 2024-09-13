@@ -1,5 +1,16 @@
 #!/bin/bash
-current_path=$(dirname "$0")
+current_dir=$(dirname "$0")
+
+upper_dir=$(dirname "${current_dir}")
+namespace_dir=$(dirname "${upper_dir}")
+
+## create fast-gshare and fast-gshare-fn namespace if not existed
+fastgshare_ns=$(kubectl get namespace fast-gshare --no-headers)
+fastgshare_fn_ns=$(kubectl get namespace fast-gshare-fn --no-headers) 
+if [ -z "${fastgshare_ns}" ]; then
+    echo "creating fast-gshare and fast-gshare-fn namespace ..."
+    kubectl apply -f ${namespace_dir}/namespace.yaml
+fi
 
 # check if the node has at least one NVIDIA GPU
 if nvidia-smi &> /dev/null; then
@@ -10,6 +21,7 @@ else
     exit
 fi
 
+## check if the hook library is loaded to the diretory /fastpod/library/
 if [ ! -e /fastpod/library/libfast.so.1 ]; then
     echo "fastpod hook library is missing. copy the file to the /fastpod/library..."
     if [ ! -e /fastpod/library ]; then
@@ -18,14 +30,7 @@ if [ ! -e /fastpod/library/libfast.so.1 ]; then
     sudo cp -r ${project_dir}/install/libfast.so.1 /fastpod/library/
 fi
 
-if [ ! -e /fastpod/library/libfast.so.1 ]; then
-    echo "fastpod hook library is missing. copy the file to the /fastpod/library..."
-    if [ ! -e /fastpod/library ]; then
-        sudo mkdir /fastpod/library
-    fi
-    sudo cp -r ${project_dir}/install/libfast.so.1 /fastpod/library/
-fi
-
+## check if the models dir is created
 if [ ! -e /models ]; then
     echo "models dir is missing. creating /models."
     sudo mkdir /models
@@ -39,8 +44,8 @@ if [ -z "${existed_config}" ]; then
 fi
 
 
-kubectl apply -f ${current_path}/mps_daemon.yaml
+kubectl apply -f ${current_dir}/mps_daemon.yaml
 sleep 3
-kubectl apply -f ${current_path}/fastpod-controller-manager.yaml
+kubectl apply -f ${current_dir}/fastpod-controller-manager.yaml
 sleep 5
-kubectl apply -f ${current_path}/fastgshare-node-daemon.yaml
+kubectl apply -f ${current_dir}/fastgshare-node-daemon.yaml
