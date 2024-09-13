@@ -18,10 +18,26 @@ if [ ! -e /fastpod/library/libfast.so.1 ]; then
     sudo cp -r ${project_dir}/install/libfast.so.1 /fastpod/library/
 fi
 
+if [ ! -e /fastpod/library/libfast.so.1 ]; then
+    echo "fastpod hook library is missing. copy the file to the /fastpod/library..."
+    if [ ! -e /fastpod/library ]; then
+        sudo mkdir /fastpod/library
+    fi
+    sudo cp -r ${project_dir}/install/libfast.so.1 /fastpod/library/
+fi
+
 if [ ! -e /models ]; then
     echo "models dir is missing. creating /models."
     sudo mkdir /models
 fi
+
+## deploy the kube-config configmap if not existed
+existed_config=$(kubectl get configmap kube-config -n kube-system --no-headers)
+if [ -z "${existed_config}" ]; then
+    echo "creating kube config configmap ..."
+    kubectl create configmap kube-config -n kube-system --from-file=$HOME/.kube/config
+fi
+
 
 kubectl apply -f ${current_path}/mps_daemon.yaml
 sleep 3
