@@ -1,0 +1,3 @@
+[submodule "konton_test/test_benchmark/MLPerf-Inference-Benchmark-FaST-GShare"]
+    path = konton_test/test_benchmark/MLPerf-Inference-Benchmark-FaST-GShare
+    url = https://github.com/KontonGu/MLPerf-Inference-Benchmark-FaST-GShare.git
