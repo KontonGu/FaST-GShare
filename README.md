@@ -1,7 +1,7 @@
 # FaST-GShare
 
 ## Introduction
-FaST-GShare: Enabling Efficient Spatio-Temporal GPU Sharing in Serverless Computing for Deep Learning Inference
+**FaST-GShare: Enabling Efficient Spatio-Temporal GPU Sharing in Serverless Computing for Deep Learning Inference**
 
 ### FaSTPod 
 FaSTPod is a Custom Resource that enables temporal and spacial GPU sharing. Users can specify fine-grained GPU resources for each Pod in the FaSTPod's YAML specification annotations, such as:
@@ -24,6 +24,7 @@ A simple FaSTPod deployment example is available in `yaml/fastpod/testfastpod.ya
 ## Deployment
 
 ### Infrastruction Install
+Install K8S infrastructure, NVIDIA Toolkit, and other prerequisite following [Installation Guide](https://github.com/KontonGu/FaST-GShare/blob/main/install/README.md).
 
 ### Install FaST-GShare FaSTPod 
 1. Deploy FaSTPod CRD (Custom Resource Definition)
@@ -63,8 +64,8 @@ The deployment of the FaST-GShare-Function in this project does not include the 
     $ bash ./install/uninstall_fast-gshare-fn.sh
     ```
 
-## Build FaST-GShare from Scrach based on the Code (for further Developing)
-The detailed introduction to the FaST-GShare project's construction from the source code can be found in the `./develope` directory.
+## Build FaST-GShare from Scratch based on the Code (for further Developing)
+The detailed introduction to the FaST-GShare project's construction from the source code can be found in the `./develope` directory and [README](https://github.com/KontonGu/FaST-GShare/blob/main/develop/README.md).
 
 
 ## Citation
