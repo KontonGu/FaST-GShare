@@ -24,7 +24,7 @@ A simple FaSTPod deployment example is available in `yaml/fastpod/testfastpod.ya
 ## Deployment
 
 ### Infrastruction Install
-Install K8S infrastructure, NVIDIA Toolkit, and other prerequisite following [Installation Guide](https://github.com/KontonGu/FaST-GShare/blob/main/install/README.md).
+Install K8S infrastructure, NVIDIA Driver && Toolkit, and other prerequisite following [Installation Guide](https://github.com/KontonGu/FaST-GShare/blob/main/install/README.md).
 
 ### Install FaST-GShare FaSTPod 
 1. Deploy FaSTPod CRD (Custom Resource Definition)
