@@ -113,6 +113,8 @@ type FaSTPodStatus struct {
 	Node2Id []Scheded `json:"node2Id,omitempty"`
 
 	//TODO: adding contitions?
+
+	ResourceConfig *map[string]string `json:"resourceconfig"`
 }
 
 type Scheded struct {

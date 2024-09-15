@@ -189,6 +189,17 @@ func (in *FaSTPodStatus) DeepCopyInto(out *FaSTPodStatus) {
 		*out = make([]Scheded, len(*in))
 		copy(*out, *in)
 	}
+	if in.ResourceConfig != nil {
+		in, out := &in.ResourceConfig, &out.ResourceConfig
+		*out = new(map[string]string)
+		if **in != nil {
+			in, out := *in, *out
+			*out = make(map[string]string, len(*in))
+			for key, val := range *in {
+				(*out)[key] = val
+			}
+		}
+	}
 	return
 }
 
