@@ -197,7 +197,7 @@ func (ctr *Controller) gpuNodeInit() error {
 			}
 
 			gpu_mem, tmp_err = strconv.ParseInt(pod.ObjectMeta.Annotations[fastpodv1.FaSTGShareGPUMemory], 10, 64)
-			if tmp_err != nil || gpu_mem < 0 || gpu_mem > 100 {
+			if tmp_err != nil || gpu_mem < 0 {
 				continue
 			}
 
@@ -522,4 +522,30 @@ func (ctr *Controller) removeFaSTPodFromList(fastpod *fastpodv1.FaSTPod) {
 		}
 	}
 
+}
+
+// check the validity of resource configuration values
+func (ctr *Controller) resourceValidityCheck(pod *corev1.Pod) bool {
+	var tmp_err error
+	quota_limit, tmp_err := strconv.ParseFloat(pod.ObjectMeta.Annotations[fastpodv1.FaSTGShareGPUQuotaLimit], 64)
+	if tmp_err != nil || quota_limit > 1.0 || quota_limit < 0.0 {
+		return false
+	}
+	quota_req, tmp_err := strconv.ParseFloat(pod.ObjectMeta.Annotations[fastpodv1.FaSTGShareGPUQuotaRequest], 64)
+	if tmp_err != nil || quota_limit > 1.0 || quota_limit < 0.0 || quota_limit < quota_req {
+		return false
+	}
+
+	sm_partition, tmp_err := strconv.ParseInt(pod.ObjectMeta.Annotations[fastpodv1.FaSTGShareGPUSMPartition], 10, 64)
+	if tmp_err != nil || sm_partition < 0 || sm_partition > 100 {
+		sm_partition = int64(100)
+		return false
+	}
+
+	gpu_mem, tmp_err := strconv.ParseInt(pod.ObjectMeta.Annotations[fastpodv1.FaSTGShareGPUMemory], 10, 64)
+	if tmp_err != nil || gpu_mem < 0 {
+		return false
+	}
+
+	return true
 }

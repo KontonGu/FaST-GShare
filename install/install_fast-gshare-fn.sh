@@ -45,6 +45,6 @@ if [ -z "${existed_config}" ]; then
 fi
  
 helm install fast-gshare ./chart/fastgshare --namespace fast-gshare --set functionNamespace=fast-gshare-fn  \
-	--set  fastpodControllerManager.image="docker.io/kontonpuku666/fastpod-controller-manager:mps_test"
+	--set  fastpodControllerManager.image="docker.io/kontonpuku666/fastpod-controller-manager:reconfig_test"
 
 

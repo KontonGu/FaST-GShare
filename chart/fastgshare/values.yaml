@@ -298,7 +298,8 @@ operator:
 
 
 fastpodControllerManager:
-  image: docker.io/kontonpuku666/fastpod-controller-manager:controller_test
+  # image: docker.io/kontonpuku666/fastpod-controller-manager:controller_test
+  image: docker.io/kontonpuku666/fastpod-controller-manager:reconfig_test
 fastgshareNodeDaemon:
   fastpodFastscheduler:
     image: docker.io/kontonpuku666/fastpod-fastscheduler:release

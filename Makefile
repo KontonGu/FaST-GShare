@@ -54,6 +54,12 @@ mps-test-fastpod-controller:
 	docker build -t ${DOCKER_USER}/fastpod-controller-manager:mps_test -f docker/fastpod-controller-manager/Dockerfile .
 	docker push ${DOCKER_USER}/fastpod-controller-manager:mps_test
 
+.PHONY: resource-reconfig-test-fastpod-controller
+resource-reconfig-test-fastpod-controller:
+	sudo ctr -n k8s.io i ls | grep ${DOCKER_USER}/fastpod-controller-manager | awk '{print $$1}' | xargs -I {} sudo ctr -n k8s.io i rm {}
+	docker build -t ${DOCKER_USER}/fastpod-controller-manager:reconfig_test -f docker/fastpod-controller-manager/Dockerfile .
+	docker push ${DOCKER_USER}/fastpod-controller-manager:reconfig_test
+
 .PHONY: upload-fastpod-controller-manager-image
 upload-fastpod-controller-manager-image:
 	docker push ${DOCKER_USER}/fastpod-controller-manager:release 

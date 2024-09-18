@@ -377,6 +377,38 @@ func (ctr *Controller) syncHandler(key string) error {
 	filteredPods := filterInactivePods(allPods)
 	klog.Infof("The FaSTPod=%s/%s now has %d pods.", fastpodCopy.Namespace, fastpodCopy.Name, len(filteredPods))
 
+	syncReStatus := false
+	var manageReError error
+	// reconcile the quota resource configuration
+	reqName := fastpodv1.FaSTGShareGPUQuotaRequest
+	limitName := fastpodv1.FaSTGShareGPUQuotaLimit
+	smName := fastpodv1.FaSTGShareGPUSMPartition
+	klog.Info("Checking resource configuration change......")
+	if fastpodCopy.Status.ResourceConfig == nil {
+		syncReStatus = true
+		klog.Info("fastpodCopy.Status.ResourceConfig is null ......")
+		resourceConfig := make(map[string]string)
+		fastpodCopy.Status.ResourceConfig = &resourceConfig
+		(*fastpodCopy.Status.ResourceConfig)[reqName] = fastpodCopy.ObjectMeta.Annotations[reqName]
+		(*fastpodCopy.Status.ResourceConfig)[limitName] = fastpodCopy.ObjectMeta.Annotations[limitName]
+		(*fastpodCopy.Status.ResourceConfig)[smName] = fastpodCopy.ObjectMeta.Annotations[smName]
+	} else {
+		if (*fastpodCopy.Status.ResourceConfig)[reqName] != fastpodCopy.ObjectMeta.Annotations[reqName] ||
+			(*fastpodCopy.Status.ResourceConfig)[limitName] != fastpodCopy.ObjectMeta.Annotations[limitName] {
+			klog.Infof("GPU resource is Re-configured for the fastpod %s.", fastpodCopy.ObjectMeta.Name)
+			manageReError = ctr.reconcileResourceConfig(filteredPods, fastpodCopy)
+			if manageReError != nil {
+				klog.Errorf("Error Failed to update the resource annoation for the pods of the fastpod %s.", fastpodCopy.ObjectMeta.Name)
+
+			} else {
+				syncReStatus = true
+				(*fastpodCopy.Status.ResourceConfig)[reqName] = fastpodCopy.ObjectMeta.Annotations[reqName]
+				(*fastpodCopy.Status.ResourceConfig)[limitName] = fastpodCopy.ObjectMeta.Annotations[limitName]
+				(*fastpodCopy.Status.ResourceConfig)[smName] = fastpodCopy.ObjectMeta.Annotations[smName]
+			}
+		}
+	}
+
 	// reconcile the replicas of the fastpod
 	var manageReplicasErr error
 	if syncFaSTPod {
@@ -397,11 +429,23 @@ func (ctr *Controller) syncHandler(key string) error {
 		}
 	}
 
+	if syncReStatus {
+		updatedFastpod, err = ctr.fastpodClient.FastgshareV1().FaSTPods(fastpodCopy.Namespace).Update(context.TODO(), fastpodCopy, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	if manageReError != nil {
+		ctr.enqueueFaSTPod(updatedFastpod)
+	}
+
 	if manageReplicasErr != nil && updatedFastpod.Status.ReadyReplicas == *(updatedFastpod.Spec.Replicas) &&
 		updatedFastpod.Status.AvailableReplicas != *(updatedFastpod.Spec.Replicas) {
 		klog.Infof("(enqueue fastpod from replicas check (func: syncHandler)) Re-enqueue the FaSTPod = %s.", updatedFastpod.Name)
 		ctr.enqueueFaSTPod(updatedFastpod)
 	}
+
 	return manageReplicasErr
 }
 
@@ -611,6 +655,62 @@ func (ctr *Controller) reconcileReplicas(ctx context.Context, existedPods []*cor
 		default:
 		}
 
+	}
+
+	return nil
+}
+
+func (ctr *Controller) reconcileResourceConfig(existedPods []*corev1.Pod, fastpod *fastpodv1.FaSTPod) error {
+	reqName := fastpodv1.FaSTGShareGPUQuotaRequest
+	limitName := fastpodv1.FaSTGShareGPUQuotaLimit
+	smName := fastpodv1.FaSTGShareGPUSMPartition
+	for _, pod := range existedPods {
+		// configure the new resource via the fast-configurator
+		nodeName := pod.Spec.NodeName
+		vgpuID := pod.Annotations[fastpodv1.FaSTGShareVGPUID]
+		node, ok := nodesInfo[nodeName]
+		if !ok {
+			klog.Errorf("Error failed to get node information for the pod %s.", pod.ObjectMeta.Name)
+			continue
+		}
+		gpuInfo, ok := node.vGPUID2GPU[vgpuID]
+		if !ok {
+			klog.Errorf("Error failed to get gpu information information for the pod %s.", pod.ObjectMeta.Name)
+			continue
+		}
+		// Get the key of the pod
+		key, err := cache.MetaNamespaceKeyFunc(pod)
+		if err != nil {
+			klog.Errorf("Error getting key: %v\n", err)
+			continue
+		}
+		podreq, isFound := FindInQueue(key, gpuInfo.PodList)
+		if !isFound {
+			klog.Errorf("Error failed to get pod information information for the pod %s.", pod.ObjectMeta.Name)
+			continue
+		}
+		resourceValid := ctr.resourceValidityCheck(pod)
+		if !resourceValid {
+			klog.Errorf("Error Resource Configuration for the pod %s is invalid.", pod.ObjectMeta.Name)
+			continue
+		}
+		podreq.QtRequest, _ = strconv.ParseFloat(fastpod.ObjectMeta.Annotations[reqName], 64)
+		podreq.QtLimit, _ = strconv.ParseFloat(fastpod.ObjectMeta.Annotations[limitName], 64)
+		podreq.SMPartition, _ = strconv.ParseInt(fastpod.ObjectMeta.Annotations[smName], 10, 64)
+
+		ctr.updatePodsGPUConfig(nodeName, gpuInfo.UUID, gpuInfo.PodList)
+
+		// update the spec.Annotation of the resource configuration for the pod of the fastpod
+		podcpy := pod.DeepCopy()
+		podcpy.Annotations[reqName] = fastpod.ObjectMeta.Annotations[reqName]
+		podcpy.Annotations[limitName] = fastpod.ObjectMeta.Annotations[limitName]
+		podcpy.Annotations[smName] = fastpod.ObjectMeta.Annotations[smName]
+		_, err = ctr.kubeClient.CoreV1().Pods(podcpy.Namespace).Update(context.TODO(), podcpy, metav1.UpdateOptions{})
+		if err != nil {
+			tmperr := fmt.Errorf("Error Failed to update the resource annotation of the pod %s.", podcpy.ObjectMeta.Name)
+			klog.Error(tmperr)
+			return tmperr
+		}
 	}
 
 	return nil

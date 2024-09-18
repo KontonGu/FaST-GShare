@@ -27,6 +27,8 @@ elif [[ "${ubuntu_version}" == "22.04" ]]; then
     sudo apt-mark hold cuda
 fi
 
+sudo apt-mark hold nvidia-driver-535
+
 CUDA_PATH=/usr/local/cuda
 CUDA_PATH_LINE="export PATH=\$CUDA_PATH/bin:\$PATH"
 CUDA_LD_LIBRARY_PATH_LINE="export LD_LIBRARY_PATH=\$CUDA_PATH/lib64:\$LD_LIBRARY_PATH"

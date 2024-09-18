@@ -181,5 +181,6 @@ func (l *FunctionLookup) DeletePodInfo(funcName string, podName string) {
 	if fastcache, found := l.Database.Get(funcName); found {
 		klog.Infof("Deleting pod %s info of fastpod = %s", podName, funcName)
 		fastcache.(gcache.Cache).Delete(podName)
+		klog.Infof("Deleting finished pod %s info of fastpod = %s", podName, funcName)
 	}
 }
