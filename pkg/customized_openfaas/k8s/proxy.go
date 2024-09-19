@@ -169,7 +169,6 @@ func (l *FunctionLookup) AddFunc(funcname string) {
 	fstpcache := gcache.New(5*time.Minute, 10*time.Minute)
 	klog.Infof("DEBUG: initializing, FaSTPod info %s", funcname)
 	l.Database.Set(funcname, fstpcache, gcache.NoExpiration)
-
 }
 
 func (l *FunctionLookup) DeleteFunction(name string) {
@@ -178,9 +177,9 @@ func (l *FunctionLookup) DeleteFunction(name string) {
 }
 
 func (l *FunctionLookup) DeletePodInfo(funcName string, podName string) {
-	if fastcache, found := l.Database.Get(funcName); found {
-		klog.Infof("Deleting pod %s info of fastpod = %s", podName, funcName)
-		fastcache.(gcache.Cache).Delete(podName)
-		klog.Infof("Deleting finished pod %s info of fastpod = %s", podName, funcName)
-	}
+	// if fastcache, found := l.Database.Get(funcName); found {
+	// 	klog.Infof("Deleting pod %s info of fastpod = %s", podName, funcName)
+	// 	fastcache.(gcache.Cache).Delete(podName)
+	// 	klog.Infof("Deleting finished pod %s info of fastpod = %s", podName, funcName)
+	// }
 }
