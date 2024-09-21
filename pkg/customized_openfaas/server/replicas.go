@@ -151,7 +151,7 @@ func makeReplicaHandler(defaultNamespace string, client clientset.Interface, fun
 			klog.Errorf("Fastpod %s get error: %v", fstpDepName, err)
 			return
 		}
-		fstpCopy := fstp.DeepCopy()
+		// fstpCopy := fstp.DeepCopy()
 
 		//TODO: what could done better here?
 		// Currently the server interface is not responsible for auto-scaling
@@ -165,23 +165,25 @@ func makeReplicaHandler(defaultNamespace string, client clientset.Interface, fun
 
 		klog.Infof("Current replica is %d", *replica)
 
-		fstpCopy.Spec.Replicas = int32p(int32(req.Replicas))
-		klog.Infof("Replicas from request = %d.", req.Replicas)
-		updatedFstp, err := client.FastgshareV1().FaSTPods(lookupNamespace).Update(r.Context(), fstpCopy, metav1.UpdateOptions{})
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
-			klog.Errorf("Fastpod %s update error %v", fstpDepName, err)
-			return
-		}
+		//******** The auto-scaler is implemented seperately, Ignore the scaling in Alertmanager ***************//
 
-		if *updatedFstp.Spec.Replicas == int32(req.Replicas) {
-			klog.Infof("Fastpod %s replica updated to %v", fstpDepName, req.Replicas)
-			w.WriteHeader(http.StatusAccepted)
-		} else {
-			klog.Infof("Fastpod %s with replica %i failed updated to %v replicas", updatedFstp.Name, *updatedFstp.Spec.Replicas, req.Replicas)
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		// fstpCopy.Spec.Replicas = int32p(int32(req.Replicas))
+		// klog.Infof("Replicas from request = %d.", req.Replicas)
+		// updatedFstp, err := client.FastgshareV1().FaSTPods(lookupNamespace).Update(r.Context(), fstpCopy, metav1.UpdateOptions{})
+		// if err != nil {
+		// 	w.WriteHeader(http.StatusInternalServerError)
+		// 	w.Write([]byte(err.Error()))
+		// 	klog.Errorf("Fastpod %s update error %v", fstpDepName, err)
+		// 	return
+		// }
+
+		// if *updatedFstp.Spec.Replicas == int32(req.Replicas) {
+		// 	klog.Infof("Fastpod %s replica updated to %v", fstpDepName, req.Replicas)
+		// 	w.WriteHeader(http.StatusAccepted)
+		// } else {
+		// 	klog.Infof("Fastpod %s with replica %i failed updated to %v replicas", updatedFstp.Name, *updatedFstp.Spec.Replicas, req.Replicas)
+		// 	w.WriteHeader(http.StatusInternalServerError)
+		// }
 	}
 }
 

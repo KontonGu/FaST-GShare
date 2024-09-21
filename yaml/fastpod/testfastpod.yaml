@@ -14,6 +14,7 @@ spec:
     containers:
     - name: resnet-pytorch
       image: docker.io/kontonpuku666/mlperf-resnet:pytorch
+      
       # env:
       #   - name: CUDA_MPS_ACTIVE_THREAD_PERCENTAGE
       #     value: "60"

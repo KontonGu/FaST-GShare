@@ -44,7 +44,7 @@ func New(fastclient clientset.Interface,
 
 	fastpodNamespace := "fast-gshare-fn"
 
-	if namespace, exists := os.LookupEnv("function_namspace"); exists {
+	if namespace, exists := os.LookupEnv("function_namespace"); exists {
 		fastpodNamespace = namespace
 	}
 
@@ -53,6 +53,7 @@ func New(fastclient clientset.Interface,
 	if val, exists := os.LookupEnv("pprof"); exists {
 		pprof = val
 	}
+	klog.Infof("pprof: %v.", pprof)
 
 	bootstrapConfig := types.FaaSConfig{
 		ReadTimeout:  cfg.FaaSConfig.ReadTimeout,
