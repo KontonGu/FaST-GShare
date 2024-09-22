@@ -179,6 +179,7 @@ prometheus:
     requests:
       memory: "512Mi"
   annotations: {}
+  clusterRole: true
 
 alertmanager:
   image: prom/alertmanager:v0.24.0

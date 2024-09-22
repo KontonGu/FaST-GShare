@@ -15,7 +15,7 @@ metadata:
     release: {{ .Release.Name }}
 ---
 {{- if .Values.rbac }}
-{{- if .Values.clusterRole }}
+{{- if .Values.prometheus.clusterRole }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
