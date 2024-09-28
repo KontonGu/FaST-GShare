@@ -291,6 +291,8 @@ func getFaSTPodReplicaStatus(fastpod *fastpodv1.FaSTPod, pods []*corev1.Pod, man
 			if podv1.IsPodAvailable(pod, 1, metav1.Now()) {
 				availableReplicaCnt++
 			}
+		} else {
+			klog.Infof("Waiting pod %s to be ready.", pod.Name)
 		}
 	}
 

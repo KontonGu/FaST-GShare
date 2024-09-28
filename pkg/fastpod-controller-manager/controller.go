@@ -165,15 +165,15 @@ func NewController(
 		UpdateFunc: func(old, new interface{}) {
 			newFstp := new.(*fastpodv1.FaSTPod)
 			oldFstp := old.(*fastpodv1.FaSTPod)
-			klog.Infof("DEBUG: current FaSTPod %s with replica %d ", newFstp.Name, *newFstp.Spec.Replicas)
-			klog.Infof("DEBUG: queue length %d", controller.workqueue.Len())
+			klog.Infof("UpdateFunc: current FaSTPod %s with replica %d ", newFstp.Name, *newFstp.Spec.Replicas)
+			klog.Infof("UpdateFunc: queue length %d", controller.workqueue.Len())
 			if newFstp.ResourceVersion != oldFstp.ResourceVersion {
 				klog.Infof("FaSTPod has different ResourceVersion, update the FaSTPod.")
 				controller.enqueueFaSTPod(new)
 				return
 			}
 
-			// controller.enqueueFaSTPod(new)
+			controller.enqueueFaSTPod(new)
 		},
 		DeleteFunc: controller.handleDeletedFaSTPod,
 	})
@@ -387,13 +387,13 @@ func (ctr *Controller) syncHandler(key string) error {
 	filteredPods := filterInactivePods(allPods)
 	klog.Infof("The FaSTPod=%s/%s now has %d pods.", fastpodCopy.Namespace, fastpodCopy.Name, len(filteredPods))
 
+	// reconcile the quota resource configuration
 	syncReStatus := false
 	var manageReError error
-	// reconcile the quota resource configuration
 	reqName := fastpodv1.FaSTGShareGPUQuotaRequest
 	limitName := fastpodv1.FaSTGShareGPUQuotaLimit
 	smName := fastpodv1.FaSTGShareGPUSMPartition
-	klog.Info("Checking resource configuration change......")
+	klog.Info("Checking if resource configurations change......")
 	if fastpodCopy.Status.ResourceConfig == nil {
 		klog.Info("fastpodCopy.Status.ResourceConfig is null, start to create it ......")
 		syncReStatus = true
@@ -433,18 +433,12 @@ func (ctr *Controller) syncHandler(key string) error {
 		fastpodCopy.Status.AvailableReplicas = newStatus.AvailableReplicas
 		fastpodCopy.Status.ReadyReplicas = newStatus.ReadyReplicas
 		fastpodCopy.Status.Replicas = newStatus.Replicas
-		// updatedFastpod, err = ctr.fastpodClient.FastgshareV1().FaSTPods(fastpodCopy.Namespace).Update(context.TODO(), fastpodCopy, metav1.UpdateOptions{})
-		// if err != nil {
-		// 	klog.Error("Error while updating the fastpod status related to replicas.")
-		// 	return err
-		// }
+		syncReplica = true
 	}
 
 	// other Status Check
-	// syncGPUStatus := false
-	// syncGPUStatus, _ = ctr.CheckGPURelatedStatus(fastpodCopy)
-	klog.Infof("KONTON_TEST: SyncReplica Status = %v.", syncReplica)
-	if syncReStatus || fastpodCopy.Status.ReadyReplicas != *(fastpodCopy.Spec.Replicas) {
+	// klog.Infof("KONTON_TEST: SyncReplica Status = %v.", syncReplica)
+	if syncReStatus || syncReplica {
 		klog.Infof("Sync Resource Status with Update.")
 		updatedFastpod, err = ctr.fastpodClient.FastgshareV1().FaSTPods(fastpodCopy.Namespace).Update(context.TODO(), fastpodCopy, metav1.UpdateOptions{})
 		if err != nil {
@@ -735,53 +729,6 @@ func (ctr *Controller) reconcileResourceConfig(existedPods []*corev1.Pod, fastpo
 
 	return nil
 }
-
-// func (ctr *Controller) CheckGPURelatedStatus(fastpodCopy *fastpodv1.FaSTPod) (bool, error) {
-// 	syncGPUStatus := false
-// 	selector, err := metav1.LabelSelectorAsSelector(fastpodCopy.Spec.Selector)
-// 	if err != nil {
-// 		utilruntime.HandleError(fmt.Errorf("Error to list pods of FaSTPod %s: %v", fastpodCopy.Name, err))
-// 	}
-// 	if selector == nil {
-// 		klog.Errorf("Error GPUStatus checking the selector of fastpod %s is nil...", fastpodCopy.Name)
-// 		return false, nil
-// 	}
-
-// 	// list pods of a FaSTPod
-// 	allPods, err := ctr.podsLister.Pods(fastpodCopy.Namespace).List(selector)
-// 	if err != nil {
-// 		klog.Errorf("Error Listing pods if FaSTPod = %s while Checking GPUStatus.", fastpodCopy.Name)
-// 		return false, err
-// 	}
-// 	for podname := range *fastpodCopy.Status.GPUClientPort {
-// 		found := false
-// 		for _, p := range allPods {
-// 			if p.Name == podname {
-// 				found = true
-// 				break
-// 			}
-// 		}
-// 		if !found {
-// 			syncGPUStatus = true
-// 			delete(*fastpodCopy.Status.GPUClientPort, podname)
-// 		}
-// 	}
-
-// 	for podname := range *fastpodCopy.Status.BoundDeviceIDs {
-// 		found := false
-// 		for _, p := range allPods {
-// 			if p.Name == podname {
-// 				found = true
-// 				break
-// 			}
-// 		}
-// 		if !found {
-// 			syncGPUStatus = true
-// 			delete(*fastpodCopy.Status.BoundDeviceIDs, podname)
-// 		}
-// 	}
-// 	return syncGPUStatus, nil
-// }
 
 // slowStartBatch tries to call the provided function a total of 'count' times,
 // starting slow to check for errors, then speeding up if calls succeed.
