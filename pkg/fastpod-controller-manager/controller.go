@@ -366,7 +366,7 @@ func (ctr *Controller) syncHandler(key string) error {
 	}
 
 	syncFaSTPod := true
-	selector, err := metav1.LabelSelectorAsSelector(fastpodCopy.Spec.Selector)
+	selector, err := metav1.LabelSelectorAsSelector(fastpod.Spec.Selector)
 	if err != nil {
 		utilruntime.HandleError(fmt.Errorf("error converting pod selector to selector for the fastpod %v/%v: %v", namespace, name, err))
 	}
@@ -374,14 +374,22 @@ func (ctr *Controller) syncHandler(key string) error {
 		klog.Errorf("Error the selector of fastpod %s/%s is till nil...", namespace, name)
 		return nil
 	}
-
-	// list pods of a FaSTPod
-	allPods, err := ctr.podsLister.Pods(namespace).List(selector)
-	klog.Infof("KONTON_TEST: AllPods = %d.", len(allPods))
+	klog.Infof("KONTON_TEST: fastpod selector string: %s.", selector.String())
+	// list pods of all FaSTPod
+	allPods_tmp, err := ctr.podsLister.Pods(namespace).List(selector)
 	if err != nil {
 		klog.Errorf("Error cannot get pods of the FaSTPod = %s.", key)
 		return err
 	}
+	klog.Infof("The total number of pods of the function %s = %d.", selector.String(), len(allPods_tmp))
+	var allPods []*corev1.Pod
+	// only check the
+	for _, pod := range allPods_tmp {
+		if pod.ObjectMeta.Labels["controller"] == fastpod.Name {
+			allPods = append(allPods, pod)
+		}
+	}
+	klog.Infof("KONTON_TEST: Num of AllPods of FaSTPod %s = %d.", fastpod.Name, len(allPods))
 
 	// Ignore inactive pods
 	filteredPods := filterInactivePods(allPods)
