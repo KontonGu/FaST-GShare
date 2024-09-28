@@ -82,6 +82,8 @@ func main() {
 		klog.FlushAndExit(klog.ExitFlushTimeout, 1)
 	}
 
+	// 30s means generating update event every 30s for corresponding resources
+	// et. calling UpdateFunc every 30s to check health even though no update event.
 	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
 	fastpodInformerFactory := informers.NewSharedInformerFactory(fastpodClient, time.Second*30)
 

@@ -7,12 +7,12 @@ metadata:
     com.openfaas.scale.min: "1"
     com.openfaas.scale.max: "3"
   annotations:
-    fastgshare/gpu_quota_request: "0.6"
-    fastgshare/gpu_quota_limit: "0.7"
+    fastgshare/gpu_quota_request: "0.2"
+    fastgshare/gpu_quota_limit: "0.3"
     fastgshare/gpu_sm_partition: "20"
     fastgshare/gpu_mem: "2700000000"
 spec:
-  replicas: 1
+  replicas: 2
   podSpec:
     containers:
     - name: resnet-pytorch

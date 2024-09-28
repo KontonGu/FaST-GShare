@@ -516,7 +516,7 @@ func (ctr *Controller) removeFaSTPodFromList(fastpod *fastpodv1.FaSTPod) {
 				if err != nil {
 					klog.Errorf("Error when Removing the pod = %s of the FaSTPod = %s", key, fastpod.Name)
 				} else {
-					klog.Infof("Finish removing the pod = %s of the FaSTPod = %s.", key, fastpod.Name)
+					klog.Infof("Finish removing the pod = %s of the FaSTPod = %s (kube delete).", key, fastpod.Name)
 				}
 			}
 		}
