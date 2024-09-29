@@ -248,8 +248,8 @@ func (ctr *Controller) syncHandler(key string) error {
 		return err
 	}
 
+	// fastpod-controller-manager is responsible for FaSTPod update, here we disable the operation.
 	needUpdate := false
-
 	if needUpdate {
 		_, err := ctr.fastclientset.FastgshareV1().FaSTPods(namespace).Update(context.TODO(), fastpod, metav1.UpdateOptions{})
 		if err != nil {
