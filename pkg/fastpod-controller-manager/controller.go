@@ -539,13 +539,39 @@ func (ctr *Controller) reconcileReplicas(ctx context.Context, existedPods []*cor
 				isValidFastpod = true
 			}
 
-			// get the node and gpu id (vGPU ID) the pod should be scheduled to based on the scheduling algorithm
+			// If the FaSTPod set the schedule node and schedule vGPUID in the annotation
 			var schedNode, schedvGPUID string
-			schedNode, schedvGPUID = ctr.schedule(fastpod, quotaReq, quotaLimit, smPartition, gpuMem, isValidFastpod, key)
-			if schedNode == "" {
-				return nil, errors.New("NoSchedNodeAvailable")
+			nodeNameTmp, nodeOk := fastpod.ObjectMeta.Annotations[fastpodv1.FaSTGShareNodeName]
+			vGPUIDTmp, vgpuOK := fastpod.ObjectMeta.Annotations[fastpodv1.FaSTGShareVGPUID]
+			// check if the vGPUIDTmp is in the node nodeNameTmp if GPU scheduling asigned in the annotation
+			assignedvGPUValid := false
+			if nodeOk && vgpuOK {
+				if nodeinfo, nodeExisted := nodesInfo[nodeNameTmp]; nodeExisted {
+					if _, vgpuExisted := nodeinfo.vGPUID2GPU[vGPUIDTmp]; vgpuExisted {
+						assignedvGPUValid = true
+					}
+				}
 			}
-			klog.Infof("The pod of FaSTPod = %s is scheduled to the node = %s with vGPUID = %s", key, schedNode, schedvGPUID)
+			// klog.Infof("KONTON_TEST: The status of assigned node and vGPU: nodeOk = %v, vgpuOK = %v, assignedvGPUValid = %v.", nodeOk, vgpuOK, assignedvGPUValid)
+			if nodeOk && vgpuOK && assignedvGPUValid {
+				schedNode = nodeNameTmp
+				schedvGPUID = vGPUIDTmp
+				klog.Infof("The pod of FaSTPod = %s is scheduled [Assigned] to the node = %s with vGPUID = %s", key, schedNode, schedvGPUID)
+			} else {
+				schedNode, schedvGPUID = ctr.schedule(fastpod, quotaReq, quotaLimit, smPartition, gpuMem, isValidFastpod, key)
+				if schedNode == "" {
+					return nil, errors.New("NoSchedNodeAvailable")
+				}
+				klog.Infof("The pod of FaSTPod = %s is scheduled [Automatical] to the node = %s with vGPUID = %s", key, schedNode, schedvGPUID)
+			}
+
+			// // get the node and gpu id (vGPU ID) the pod should be scheduled to based on the scheduling algorithm (Pure scheduling algorithm without assingment)
+			// var schedNode, schedvGPUID string
+			// schedNode, schedvGPUID = ctr.schedule(fastpod, quotaReq, quotaLimit, smPartition, gpuMem, isValidFastpod, key)
+			// if schedNode == "" {
+			// 	return nil, errors.New("NoSchedNodeAvailable")
+			// }
+			// klog.Infof("The pod of FaSTPod = %s is scheduled to the node = %s with vGPUID = %s", key, schedNode, schedvGPUID)
 
 			// generate the pod key for the new pod of FaSTPod
 			var subpodName string
