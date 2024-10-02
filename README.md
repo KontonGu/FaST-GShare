@@ -2,6 +2,7 @@
 
 ## Introduction
 **FaST-GShare: Enabling Efficient Spatio-Temporal GPU Sharing in Serverless Computing for Deep Learning Inference**
+FaST-GShare is a Kubernetes-based GPU sharing mechanism that enables fine-grained resource allocation across both temporal and spatial dimensions. Users can allocate corresponding GPU computing resources by configuring the appropriate temporal quota_limit and quota_req, as well as spatial sm_partition and memory, within the annotations. More details, please refer to the [paper](https://dl.acm.org/doi/abs/10.1145/3605573.3605638).
 
 ### FaSTPod 
 FaSTPod is a Custom Resource that enables temporal and spacial GPU sharing. Users can specify fine-grained GPU resources for each Pod in the FaSTPod's YAML specification annotations, such as:

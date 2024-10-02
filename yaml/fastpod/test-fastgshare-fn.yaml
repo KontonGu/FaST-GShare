@@ -11,9 +11,8 @@ metadata:
     fastgshare/gpu_quota_limit: "0.8"
     fastgshare/gpu_sm_partition: "20"
     fastgshare/gpu_mem: "2700000000"
-    fastgshare/nodeName: "kgpu1"
-    fastgshare/vgpu_id: "m35e5w3a"
-
+    # fastgshare/nodeName: "kgpu1"
+    # fastgshare/vgpu_id: "m35e5w3a"
 spec:
   replicas: 1
   podSpec:

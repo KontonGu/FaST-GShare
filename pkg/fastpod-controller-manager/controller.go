@@ -501,7 +501,6 @@ func (ctr *Controller) reconcileReplicas(ctx context.Context, existedPods []*cor
 
 			gpuDevUUID := ""
 			gpuClientPort := 0
-
 			// check the validity of fastpod resource configuration and get the resource configuration for a pod of FaSTPod
 			if fastpod.ObjectMeta.Annotations[fastpodv1.FaSTGShareGPUQuotaRequest] != "" ||
 				fastpod.ObjectMeta.Annotations[fastpodv1.FaSTGShareGPUQuotaLimit] != "" ||
@@ -578,14 +577,13 @@ func (ctr *Controller) reconcileReplicas(ctx context.Context, existedPods []*cor
 			var subpodKey string
 			if isValidFastpod {
 				var errCode int
-				fstpName := fastpodCopy.Name
+				fstpName := fastpodCopy.ObjectMeta.Name
 				if fstp2Pods[fstpName] == nil {
 					fstp2Pods[fstpName] = list.New()
 				}
 				newPodName := fstpName + "-" + RandStr(5)
 				subpodName = newPodName
 				subpodKey = fmt.Sprintf("%s/%s", fastpodCopy.ObjectMeta.Namespace, subpodName)
-
 				// get the gpu device uuid and update the pod resource configuration in configurator
 				gpuDevUUID, errCode = ctr.getGPUDevUUIDAndUpdateConfig(schedNode, schedvGPUID, quotaReq, quotaLimit, smPartition, gpuMem, subpodKey, &gpuClientPort)
 				klog.Infof("The pod = %s of FaSTPod %s with vGPUID = %s is bound to device UUID=%s with GPUClientPort=%d.", subpodKey, key, schedvGPUID, gpuDevUUID, gpuClientPort)
