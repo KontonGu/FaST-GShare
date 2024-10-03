@@ -19,14 +19,14 @@ Additionally, users can define the required replicas:
 spec:
   replicas: 2
 ```
-A simple FaSTPod deployment example is available in `yaml/fastpod/testfastpod.yaml`.
+A sample FaSTPod deployment example is available in `yaml/fastpod/testfastpod.yaml`.
 
 
 
 ## Deployment
 
 ### Infrastruction Install
-Install K8S infrastructure, NVIDIA Driver && Toolkit, and other prerequisite following [Installation Guide](https://github.com/KontonGu/FaST-GShare/blob/main/install/README.md).
+Install K8S infrastructure, NVIDIA Driver && Toolkit, and other prerequisite, please follow [Installation Guide](https://github.com/KontonGu/FaST-GShare/blob/main/install/README.md).
 
 ### Install FaST-GShare FaSTPod 
 1. Deploy FaSTPod CRD (Custom Resource Definition)
@@ -52,7 +52,7 @@ Install K8S infrastructure, NVIDIA Driver && Toolkit, and other prerequisite fol
     ```
 ---
 ### Install and Uninstall FaST-GShare-Function (without Autoscaler)
-The deployment of the FaST-GShare-Function in this project does not include the FaST-GShare-Autoscaler and only deploys with a fixed number of replicas. The complete FaST-GShare serverless version is available at [FaST-GShare-Function](https://github.com/KontonGu/FaST-GShare-Function), and the basic verion of Autoscaler plugin can be found at [FaST-GShare-Autoscaler](https://github.com/KontonGu/FaST-GShare-Autoscaler.git).
+The deployment of the FaST-GShare-Function in this project does not include the FaST-GShare-Autoscaler and only deploys with a fixed number of replicas. The complete FaST-GShare serverless version should include the FaST-GShare-Autoscaler, and the basic verion of Autoscaler plugin can be found at [FaST-GShare-Autoscaler](https://github.com/KontonGu/FaST-GShare-Autoscaler.git).
 - Install the FaST-GShare-Function Components
     ```
     $ bash ./install/install_fast-gshare-fn.sh
