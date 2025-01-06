@@ -71,7 +71,7 @@ The detailed introduction to the FaST-GShare project's construction from the sou
 
 
 ## Citation
-If you use FaST-GShare for your research, please cite our, please cite our paper [paper](https://dl.acm.org/doi/abs/10.1145/3605573.3605638):
+If you use FaST-GShare for your research, please cite our paper [paper](https://dl.acm.org/doi/abs/10.1145/3605573.3605638):
 ```
 @inproceedings{gu2023fast,
   title={FaST-GShare: Enabling Efficient Spatio-Temporal GPU Sharing in Serverless Computing for Deep Learning Inference},
