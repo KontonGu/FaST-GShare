@@ -44,7 +44,13 @@ if [ -z "${existed_config}" ]; then
     kubectl create configmap kube-config -n kube-system --from-file=$HOME/.kube/config
 fi
  
+## fast-gshare
+# helm install fast-gshare ./chart/fastgshare --namespace fast-gshare --set functionNamespace=fast-gshare-fn  \
+	# --set  fastpodControllerManager.image="docker.io/kontonpuku666/fastpod-controller-manager:reconfig_test"
+
+
 helm install fast-gshare ./chart/fastgshare --namespace fast-gshare --set functionNamespace=fast-gshare-fn  \
-	--set  fastpodControllerManager.image="docker.io/kontonpuku666/fastpod-controller-manager:reconfig_test"
+	--set  fastpodControllerManager.image="docker.io/kontonpuku666/fastpod-controller-manager:has_func"
+
 
 

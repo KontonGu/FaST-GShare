@@ -17,35 +17,75 @@ limitations under the License.
 package fastpodcontrollermanager
 
 import (
-	"fmt"
-
 	fastpodv1 "github.com/KontonGu/FaST-GShare/pkg/apis/fastgshare.caps.in.tum/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/klog/v2"
 )
 
+// func (ctr *Controller) schedule(fastpod *fastpodv1.FaSTPod, quotaReq float64, quotaLimit float64, smPartition int64, gpuMem int64, isValid bool, key string) (string, string) {
+// 	nodeList, err := ctr.nodesLister.List(labels.Set{"gpu": "present"}.AsSelector())
+// 	if err != nil {
+// 		errInfo := fmt.Errorf("Error Cannot find gpu node with the lable \"gpu:present\"")
+// 		utilruntime.HandleError(errInfo)
+// 	}
+// 	// schedNode := "kgpu1"
+// 	schedNode := nodeList[0].Name
+// 	klog.Infof("current node name: %s.", schedNode)
+// 	//curently tmmporary use
+
+// 	nodesInfoMtx.Lock()
+// 	defer nodesInfoMtx.Unlock()
+// 	node := nodesInfo[schedNode]
+// 	var vgpuID string
+// 	for key, _ := range node.vGPUID2GPU {
+// 		vgpuID = key
+// 	}
+
+// 	if schedNode == "" {
+// 		klog.Infof("No enough resources for Pod of a FaSTPod=%s/%s", fastpod.ObjectMeta.Namespace, fastpod.ObjectMeta.Name)
+// 		ctr.pendingListMux.Lock()
+// 		ctr.pendingList.PushBack(key)
+// 		ctr.pendingListMux.Unlock()
+// 		return "", ""
+// 	}
+// 	return schedNode, vgpuID
+// }
+
 func (ctr *Controller) schedule(fastpod *fastpodv1.FaSTPod, quotaReq float64, quotaLimit float64, smPartition int64, gpuMem int64, isValid bool, key string) (string, string) {
-	nodeList, err := ctr.nodesLister.List(labels.Set{"gpu": "present"}.AsSelector())
-	if err != nil {
-		errInfo := fmt.Errorf("Error Cannot find gpu node with the lable \"gpu:present\"")
-		utilruntime.HandleError(errInfo)
+	// nodeList, err := ctr.nodesLister.List(labels.Set{"gpu": "present"}.AsSelector())
+	// if err != nil {
+	// 	errInfo := fmt.Errorf("Error Cannot find gpu node with the lable \"gpu:present\"")
+	// 	utilruntime.HandleError(errInfo)
+	// }
+	schedNode := ""
+	schedvgpu := ""
+	for key, value := range fastpod.Annotations {
+		if key == "hasfunc/sched_node" {
+			schedNode = value
+		}
 	}
-	// schedNode := "kgpu1"
-	schedNode := nodeList[0].Name
-	klog.Infof("current node name: %s.", schedNode)
-	//curently tmmporary use
+
+	for key, value := range fastpod.Annotations {
+		if key == "hasfunc/sched_vgpu" {
+			schedvgpu = value
+		}
+	}
+
+	klog.Infof("Trying to schedule FaSTPod=%s/%s to node=%s, vgpu=%s", fastpod.ObjectMeta.Namespace, fastpod.ObjectMeta.Name, schedNode, schedvgpu)
 
 	nodesInfoMtx.Lock()
 	defer nodesInfoMtx.Unlock()
-	node := nodesInfo[schedNode]
-	var vgpuID string
-	for key, _ := range node.vGPUID2GPU {
-		vgpuID = key
+	node, has_node := nodesInfo[schedNode]
+	vgpuID := ""
+	if has_node {
+		for key, _ := range node.vGPUID2GPU {
+			if key == schedvgpu {
+				vgpuID = key
+			}
+		}
 	}
 
-	if schedNode == "" {
-		klog.Infof("No enough resources for Pod of a FaSTPod=%s/%s", fastpod.ObjectMeta.Namespace, fastpod.ObjectMeta.Name)
+	if schedNode == "" || schedvgpu == "" || (!has_node) || vgpuID == "" {
+		klog.Infof("Failed to schedule FaSTPod=%s/%s to node=%s, vgpu=%s", fastpod.ObjectMeta.Namespace, fastpod.ObjectMeta.Name, schedNode, schedvgpu)
 		ctr.pendingListMux.Lock()
 		ctr.pendingList.PushBack(key)
 		ctr.pendingListMux.Unlock()

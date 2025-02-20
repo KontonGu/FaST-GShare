@@ -42,7 +42,7 @@ func Run(deviceCtrManager string) {
 	if err != nil {
 		klog.Errorf("Error Cannot create the GPUClientsIPFile = %s\n", GPUClientsIPFile)
 	}
-
+	// The Pod IP of the fastgshare-node-daemon
 	st := os.Getenv(GPUClientsIPEnv) + "\n"
 	gcIpFile.WriteString(st)
 	gcIpFile.Sync()

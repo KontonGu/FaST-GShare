@@ -50,6 +50,11 @@ Install K8S infrastructure, NVIDIA Driver && Toolkit, and other prerequisite, pl
     ```
     $ bash ./yaml/fastgshare/clean_deploy_ctr_mgr_node_daemon.sh
     ```
+5. If the kube-config is missed [optional]
+    ```
+    $ kubectl create configmap kube-config -n kube-system --from-file=$HOME/.kube/config
+    ```
+   
 ---
 ### Install and Uninstall FaST-GShare-Function (without Autoscaler)
 The deployment of the FaST-GShare-Function in this project does not include the FaST-GShare-Autoscaler and only deploys with a fixed number of replicas. The complete FaST-GShare serverless version should include the FaST-GShare-Autoscaler, and the basic verion of Autoscaler plugin can be found at [FaST-GShare-Autoscaler](https://github.com/KontonGu/FaST-GShare-Autoscaler.git).

@@ -22,6 +22,7 @@ spec:
       labels:
         app: autoscaler
     spec:
+      
       volumes:
       {{- if .Values.basic_auth }}
       - name: auth

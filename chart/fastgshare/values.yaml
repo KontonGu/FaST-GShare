@@ -300,10 +300,12 @@ operator:
 
 fastpodControllerManager:
   # image: docker.io/kontonpuku666/fastpod-controller-manager:controller_test
-  image: docker.io/kontonpuku666/fastpod-controller-manager:reconfig_test
+  # image: docker.io/kontonpuku666/fastpod-controller-manager:reconfig_test  ### this is for fast-gshare
+  image: docker.io/kontonpuku666/fastpod-controller-manager:has_func  ### this is for fast-gshare
 fastgshareNodeDaemon:
   fastpodFastscheduler:
-    image: docker.io/kontonpuku666/fastpod-fastscheduler:release
+    # image: docker.io/kontonpuku666/fastpod-fastscheduler:release
+    image: docker.io/kontonpuku666/fastpod-fastscheduler:debug
   fastConfigurator:
     image: docker.io/kontonpuku666/fast-configurator:release
   

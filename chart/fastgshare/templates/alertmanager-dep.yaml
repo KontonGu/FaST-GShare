@@ -25,6 +25,22 @@ spec:
         sidecar.istio.io/inject: "true"
         checksum/alertmanager-config: {{ include (print $.Template.BasePath "/alertmanager-cfg.yaml") . | sha256sum | quote  }}
     spec:
+      tolerations:
+      - key: "CriticalAddonsOnly"
+        operator: "Exists"
+      - key: "node-role.kubernetes.io/master"
+        operator: "Exists"
+        effect: "NoSchedule"
+      - key: "node-role.kubernetes.io/control-plane"
+        operator: "Exists"
+        effect: "NoSchedule"
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: "node-role.kubernetes.io/master"
+                operator: "Exists"
       containers:
       - name: alertmanager
         image: {{ .Values.alertmanager.image }}

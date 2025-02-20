@@ -360,7 +360,7 @@ func (ctr *Controller) deleteDummyPod(nodeName, uuid, vGPUID string) {
 
 /*
 The function will retive the current nodes and gpu information and return the uuid of the vGPU which it corresponds to
-Meanwhile, the funciton will update tht pod gpu information for nodes configurator via function updatePodsGPUConfig()
+Meanwhile, the funciton will update the pod gpu information for nodes configurator via function updatePodsGPUConfig()
 if uuid is successfully retrived based on vGPUID;
 errCode 0: no error
 errCode 1: node with nodeName is not initialized
