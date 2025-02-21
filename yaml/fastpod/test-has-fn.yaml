@@ -11,8 +11,9 @@ metadata:
     fastgshare/gpu_quota_limit: "0.4"
     fastgshare/gpu_sm_partition: "100"
     fastgshare/gpu_mem: "2700000000"
-    hasfunc/sched_node: "kgpu3"
-    hasfunc/sched_vgpu: "5ts629bg"
+    has-gpu/batch_size: "2"
+    hasfunc/sched_node: "kgpu1"
+    hasfunc/sched_vgpu: "gx9eglb1"
 spec:
   replicas: 1
   podSpec:

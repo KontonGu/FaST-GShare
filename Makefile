@@ -69,12 +69,6 @@ clean-ctr-fastpod-controller-manager-image:
 	sudo ctr -n k8s.io i ls | grep ${DOCKER_USER}/fastpod-controller-manager | awk '{print $$1}' | xargs -I {} sudo ctr -n k8s.io i rm {}
 
 
-.PHONY: has-func-test-fastpod-controller
-has-func-test-fastpod-controller:
-	sudo ctr -n k8s.io i ls | grep ${DOCKER_USER}/fastpod-controller-manager | awk '{print $$1}' | xargs -I {} sudo ctr -n k8s.io i rm {}
-	docker build -t ${DOCKER_USER}/fastpod-controller-manager:has_func -f docker/fastpod-controller-manager/Dockerfile .
-	docker push ${DOCKER_USER}/fastpod-controller-manager:has_func
-
 
 ### ------------------------  fast-configurator ------------------------- ###
 ### create fastpod-controller-manager and corresponding container image
@@ -144,3 +138,18 @@ helm_install_fast-gshare-fn:
 helm_uninstall_fast-gshare-fn:
 	helm uninstall fast-gshare --namespace fast-gshare
 	kubectl delete pod -l fastgshare/role=dummyPod -n kube-system
+
+
+
+# ----------------------------------- HAS-GPU compatibility ------------------------------
+# # sudo ctr -n k8s.io i ls | grep ${DOCKER_USER}/fastpod-controller-manager | awk '{print $$1}' | xargs -I {} sudo ctr -n k8s.io i rm {}
+# .PHONY: has-gpu-fastpod-controller
+# has-gpu-fastpod-controller:
+# 	docker build -t ${DOCKER_USER}/fastpod-controller-manager:has_gpu -f docker/fastpod-controller-manager/Dockerfile .
+# 	docker push ${DOCKER_USER}/fastpod-controller-manager:has_gpu
+
+.PHONY: has-func-test-fastpod-controller
+has-func-test-fastpod-controller:
+	sudo ctr -n k8s.io i ls | grep ${DOCKER_USER}/fastpod-controller-manager | awk '{print $$1}' | xargs -I {} sudo ctr -n k8s.io i rm {}
+	docker build -t ${DOCKER_USER}/fastpod-controller-manager:has_func -f docker/fastpod-controller-manager/Dockerfile .
+	docker push ${DOCKER_USER}/fastpod-controller-manager:has_func

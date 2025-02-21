@@ -70,6 +70,7 @@ const (
 
 	fastpodKind    = "FaSTPod"
 	FastGShareWarm = "fast-gshare/warmpool"
+	HASBatchSize   = "has-gpu/batch_size"
 
 	FaSTPodLibraryDir  = "/fastpod/library"
 	SchedulerIpFile    = FaSTPodLibraryDir + "/schedulerIP.txt"
@@ -914,6 +915,11 @@ func (ctr *Controller) newPod(fastpod *fastpodv1.FaSTPod, isWarm bool, schedIP s
 	}
 
 	smPartition := fastpod.ObjectMeta.Annotations[fastpodv1.FaSTGShareGPUSMPartition]
+	batchSize, bs_existed := fastpod.ObjectMeta.Annotations[HASBatchSize]
+	// if the batch size of the pod is not set, set to the default value, 1;
+	if !bs_existed {
+		batchSize = "1"
+	}
 
 	for i := range specCopy.Containers {
 		ctn := &specCopy.Containers[i]
@@ -921,6 +927,10 @@ func (ctr *Controller) newPod(fastpod *fastpodv1.FaSTPod, isWarm bool, schedIP s
 			corev1.EnvVar{
 				Name:  "NVIDIA_VISIBLE_DEVICES",
 				Value: boundDevUUID,
+			},
+			corev1.EnvVar{
+				Name:  "HAS_GPU_BATCH_SIZE",
+				Value: batchSize,
 			},
 			corev1.EnvVar{
 				Name:  "NVIDIA_DRIVER_CAPABILITIES",
