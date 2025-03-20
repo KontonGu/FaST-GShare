@@ -7,19 +7,19 @@ metadata:
     com.openfaas.scale.min: "1"
     com.openfaas.scale.max: "3"
   annotations:
-    fastgshare/gpu_quota_request: "0.5"
-    fastgshare/gpu_quota_limit: "0.5"
+    fastgshare/gpu_quota_request: "0.4"
+    fastgshare/gpu_quota_limit: "0.4"
     fastgshare/gpu_sm_partition: "100"
     fastgshare/gpu_mem: "2700000000"
     has-gpu/batch_size: "2"
-    fastgshare/nodeName: "kgpu1"
-    fastgshare/vgpu_id: "wc23rxch"
+    hasfunc/sched_node: "kgpu1"
+    hasfunc/sched_vgpu: "xpvxwpm2"
 spec:
   replicas: 1
   podSpec:
     containers:
     - name: resnet-pytorch
-      image: docker.io/kontonpuku666/mlperf-resnet:pytorch-32
+      image: leslie233/resnet:fast-test
       ports:
         - containerPort: 8080
       readinessProbe:
