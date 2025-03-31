@@ -13,7 +13,7 @@ $ bash install_nvidia_driver.sh
     ```
 - Install work nodes:
     ```
-    $ bash install_k8s_worker_node.sh
+    $ bash install_k8s_work_node.sh
     $ bash install_nvidia_container_toolkit.sh
     ```
 
