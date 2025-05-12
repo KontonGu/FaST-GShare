@@ -1,8 +1,8 @@
 #!/bin/bash
 current_dir=$(dirname "$0")
-
 upper_dir=$(dirname "${current_dir}")
 namespace_dir=$(dirname "${upper_dir}")
+project_dir=$(dirname "${upper_dir}")
 
 ## create fast-gshare and fast-gshare-fn namespace if not existed
 fastgshare_ns=$(kubectl get namespace fast-gshare --no-headers)
@@ -22,12 +22,12 @@ else
 fi
 
 ## check if the hook library is loaded to the diretory /fastpod/library/
-if [ ! -e /fastpod/library/libfast.so.1 ]; then
+if [ ! -e /fastpod/library/libhas.so.1 ]; then
     echo "fastpod hook library is missing. copy the file to the /fastpod/library..."
     if [ ! -e /fastpod/library ]; then
-        sudo mkdir /fastpod/library
+        sudo mkdir -p /fastpod/library
     fi
-    sudo cp -r ${project_dir}/install/libfast.so.1 /fastpod/library/
+    sudo cp -r ${project_dir}/install/libhas.so.1 /fastpod/library/
 fi
 
 ## check if the models dir is created

@@ -151,5 +151,5 @@ helm_uninstall_fast-gshare-fn:
 .PHONY: has-func-test-fastpod-controller
 has-func-test-fastpod-controller:
 	sudo ctr -n k8s.io i ls | grep ${DOCKER_USER}/fastpod-controller-manager | awk '{print $$1}' | xargs -I {} sudo ctr -n k8s.io i rm {}
-	docker build -t ${DOCKER_USER}/fastpod-controller-manager:has_func -f docker/fastpod-controller-manager/Dockerfile .
-	docker push ${DOCKER_USER}/fastpod-controller-manager:has_func
+	docker build -t ${DOCKER_USER}/fastpod-controller-manager:has_gpu -f docker/fastpod-controller-manager/Dockerfile .
+	docker push ${DOCKER_USER}/fastpod-controller-manager:has_gpu

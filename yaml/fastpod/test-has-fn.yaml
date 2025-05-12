@@ -12,8 +12,8 @@ metadata:
     fastgshare/gpu_sm_partition: "100"
     fastgshare/gpu_mem: "2700000000"
     has-gpu/batch_size: "2"
-    hasfunc/sched_node: "kgpu1"
-    hasfunc/sched_vgpu: "gx9eglb1"
+    hasfunc/sched_node: "kgpu9"
+    hasfunc/sched_vgpu: "twfqai5y"
 spec:
   replicas: 1
   podSpec:

@@ -1,0 +1,7 @@
+test
+vendor
+README_Private.md
+cmd/fastpod-controller-manager/fastpodcontrollermanager
+cmd/fast-configurator/fast-configurator
+README_Private.md
+*.log

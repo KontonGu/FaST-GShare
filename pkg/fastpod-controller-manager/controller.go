@@ -946,7 +946,7 @@ func (ctr *Controller) newPod(fastpod *fastpodv1.FaSTPod, isWarm bool, schedIP s
 			},
 			corev1.EnvVar{
 				Name:  "LD_PRELOAD",
-				Value: FaSTPodLibraryDir + "/libfast.so.1",
+				Value: FaSTPodLibraryDir + "/libhas.so.1",
 			},
 			corev1.EnvVar{
 				// the scheduler IP is not necessary since the hooked containers get it from /fastpod/library/GPUClientsIP.txt

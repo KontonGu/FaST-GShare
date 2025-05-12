@@ -105,8 +105,9 @@ oidcAuthPlugin:
 
 gateway:
   #image: ghcr.io/openfaas/gateway:0.21.3
-  #image: ghcr.io/openfaas/gateway:0.24.0
-  image: ghcr.io/interstellarss/gateway:v0.1.23  #KONTON_NEEDED_TO_CHANGE
+  # image: ghcr.io/openfaas/gateway:0.24.0
+  #image: leslie233/gateway:has  #KONTON_NEEDED_TO_CHANGE
+  image: ghcr.io/interstellarss/gateway:v0.1.23
   readTimeout: "65s"
   writeTimeout: "65s"
   upstreamTimeout: "60s"  # Must be smaller than read/write_timeout
@@ -301,7 +302,7 @@ operator:
 fastpodControllerManager:
   # image: docker.io/kontonpuku666/fastpod-controller-manager:controller_test
   # image: docker.io/kontonpuku666/fastpod-controller-manager:reconfig_test  ### this is for fast-gshare
-  image: docker.io/kontonpuku666/fastpod-controller-manager:has_func  ### this is for fast-gshare
+  image: docker.io/kontonpuku666/fastpod-controller-manager:has_gpu  ### this is for fast-gshare
 fastgshareNodeDaemon:
   fastpodFastscheduler:
     # image: docker.io/kontonpuku666/fastpod-fastscheduler:release
